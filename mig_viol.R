@@ -232,7 +232,7 @@ stat.desc(d[,c("IDH_ingpc","loggdp")])
 hist(d$IDH_ingpc, breaks = "FD", col = "green" )
 hist(d$loggdp, breaks = "FD", col = "green")
 
-# 8 Foreign Direct Investment
+#### 8 Foreign Direct Investment ####
 ied <- read.dta13("IED.dta", convert.factors = TRUE)
 as_tibble(ied)
 ied <- data.frame(ied, stringsAsFactors=FALSE)
@@ -243,7 +243,7 @@ some(d[,c("idedo","year","IED")])
 # explore panel data
 #coplot(IED ~ year|idedo, type="l", data=d)
 
-# 9 Municipal, gubernatorial and federal elections dummies
+#### 9 Municipal, gubernatorial and federal elections dummies ####
 d$munelect <- ifelse(is.na(d$vtotalr6), 0, 1)
 d$gubelect <- ifelse(is.na(d$vtotalr7), 0, 1)
 d$fedelect <- ifelse(is.na(d$vtotalr1), 0, 1)
@@ -260,7 +260,7 @@ d$mungubconcur <- ifelse(d$ms == 2, 1, 0)
 d$mgf <- d$munelect + d$gubelect + d$fedelect
 d$mungubfedconcur <- ifelse(d$mgf==3,1,0)
 
-# 10 Municipal Taagepera
+#### 10 Municipal Taagepera ####
 
 d$munPANsq <- (d$PAN_p6)^2
 d$munPRIsq <- (d$PRI_p6)^2
@@ -270,7 +270,7 @@ d$munOtrossq <- (d$Otros_p6)^2
 d$munENP <- 1 / (d$munPANsq + d$munPRIsq + d$munPRDsq + d$munOtrossq)
 summary(d$munENP)
 
-# 11 gubernatorial Taagepera
+#### 11 gubernatorial Taagepera ####
 
 d$gubPANsq <- (d$PAN_p7)^2
 d$gubPRIsq <- (d$PRI_p7)^2
@@ -279,7 +279,7 @@ d$gubOtrossq = (d$Otros_p7)^2
 
 d$gubENP = 1 / (d$gubPANsq + d$gubPRIsq + d$gubPRDsq + d$gubOtrossq)
 
-# 11.4 we generate the interaction between municipal and state electoral competition
+#### 11.4 we generate the interaction between municipal and state electoral competition ####
 
 d$localcomp <- d$munENP*d$gubENP
 
@@ -287,7 +287,7 @@ d$localcomp <- d$munENP*d$gubENP
 d$localcomp2 <- (d$localcomp)^2
 summary(d$localcomp)
 
-# 12 add homicidios SIMBAD
+#### 12 add homicidios SIMBAD ####
 
 violinegi <- read.dta13("homicidios_simbad.dta", convert.factors = TRUE)
 violinegi <- subset(violinegi, select =  -c(NomMun))
@@ -318,26 +318,40 @@ head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad")], n = 30)
 # create logarithmic expression of homicide rates (year 2010)
 
 
-# 12 Lagged homicides
+#### 12 Lagged homicides ####
 
 d$lag.hom <- c(NA, d$horatesimbad[-nrow(d)])
 d$lag.hom[which(!duplicated(d$idedomun))] <- NA
 
 head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","lag.hom")], n = 40)
 
-# 13 Non-zero homicide variable: this is to have a dycothomic variable to make the Logit model (Trejo's model 2)
+#### 13 Non-zero homicide variable: this is to have a dycothomic variable to make the Logit model (Trejo's model 2) ####
 
 d$nonzero = 0
 d$nonzero <- ifelse(d$homicidios > 0, 1, 0)
 summary(d$nonzero)
 
-# 14. Rural corporatism
+#### 14. Rural corporatism ####
 d$ruralcorp = d$PRI_p6 * d$part6
 summary(d[,c("ruralcorp", "PRI_p6", "part6")])
 
-# 15. Population, we generate the natural logarythm but als the quadratic term
+##### 15. Population, we generate the natural logarythm but als the quadratic term #####
 d$logpop = log(d$pob_total_est)
 d$pop2 = d$pob_total_est^2
 d$pop = d$pob_total_est
 summary(d[, c("logpop", "pop2","pop")])
+
+#### 16. Economic Crisis Dummy Variable ##### 
+d$crisis = 0
+d$crisis = ifelse(d$year == 1982, 1, 0)
+d$crisis = ifelse(d$year == 1985, 1, 0)
+d$crisis = ifelse(d$year == 1986, 1, 0)
+d$crisis = ifelse(d$year == 1995, 1, 0)
+d$crisis = ifelse(d$year == 2000, 1, 0)
+d$crisis = ifelse(d$year == 2001, 1, 0)
+d$crisis = ifelse(d$year == 2002, 1, 0)
+d$crisis = ifelse(d$year == 2003, 1, 0)
+d$crisis = ifelse(d$year == 2008, 1, 0)
+d$crisis = ifelse(d$year == 2009, 1, 0)
+d$crisis = ifelse(d$year == 2010, 1, 0)
 
