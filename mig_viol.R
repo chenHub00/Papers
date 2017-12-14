@@ -1,8 +1,8 @@
 rm(list = ls())
 
 # set working directory
-# setwd("~/MEGA/work")
-setwd("~/work")
+getwd()
+#setwd("~/work")
 
 ################## 1. instalar y cargar paquetes ###########
 #
@@ -30,7 +30,7 @@ setwd("~/work")
 # install.packages("ineq")
 # install.packages("tibble")
 # install.packages("readstata13")
-
+# install.packages("dummies")
 
 #check library list
 # library()
@@ -63,14 +63,10 @@ d$idmun <- recode(d$idmun, "7121=121")
 d$idmun <- recode(d$idmun, "7120=120")
 
 
-
-
-
-
-########## 22. Poverty
+########## 2. Poverty
 ############### 2.1 Prepare food poverty variable in the dataset for year 2000 ##################
 
-pobalimentaria2000 <- read.csv("~/Tesis/BaseEVES/pobalimentaria2000.csv", sep = ";",
+pobalimentaria2000 <- read.csv("pobalimentaria2000.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
 pobalimentaria2000 <- rename(pobalimentaria2000, replace = 
                                c("pobalimentaria2000" = "pobalimentaria"))
@@ -85,8 +81,7 @@ pobalimentaria2000 <- subset(pobalimentaria2000, select = -c(Municipio) )  # tir
 
 ################## 2.2 Prepare food poverty for the year 2010 ################
  
-pobalimentaria2010 <- read.csv("~/Tesis/BaseEVES/pobalimentaria2010.csv", sep = ";",
-
+pobalimentaria2010 <- read.csv("pobalimentaria2010.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")
 pobalimentaria2010 <- rename(pobalimentaria2010, replace =
                                c("Clave.del.municipio" = "idedomun"))
@@ -104,7 +99,7 @@ pobalimentaria <- rbind(pobalimentaria2000, pobalimentaria2010)
 # tail(pobalimentaria)
 
 ############# 2.3 Ahora la juntamos con la base EVES #################
-#cargar la base 
+#cargar la base OTRAVEZ?
 d <- read.csv("BaseEVES.csv", stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
 
 # leerla como un "Tibble"
@@ -125,7 +120,7 @@ d <- merge(d, pobalimentaria, by=c("idedomun","year"), all=TRUE)
 ############ 3. Literacy ################
 # 3.1 year 2000
 
-illit2000 <- read.csv("~/Tesis/BaseEVES/analfabeta2000.csv", sep = ";",
+illit2000 <- read.csv("analfabeta2000.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
 str(illit2000) # hay que crear una proporcion de gente que sabe leer y escribir.
 
@@ -145,7 +140,7 @@ illit2000 <- subset(illit2000, select = -c(Nombre, Total,
 
 ################## 3.2 illiteracy year 2010 ################
 
-illit2010 <- read.csv("~/Tesis/BaseEVES/analfabeta2010.csv", sep = ";",
+illit2010 <- read.csv("analfabeta2010.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")
 str(illit2010)
 illit2010 <- rename(illit2010, replace =
@@ -174,7 +169,7 @@ summary(d$poverty)
 
 ##############  5  we include population older than 15 without secondary education for the year 2000 #################
 
-wosec2000 <- read.csv("~/Tesis/BaseEVES/pobbasiced2000.csv", sep = ";",
+wosec2000 <- read.csv("pobbasiced2000.csv", sep = ";",
                       stringsAsFactors = FALSE, fileEncoding="latin1")
  summary(wosec2000)
 
@@ -183,7 +178,7 @@ wosec2000 <- subset(wosec2000, select = -c(Nombre, ratebasiced))
 wosec2000 <- rename(wosec2000, replace = c("Clave" = "idedomun") )
 wosec2000$year <- 2000
 
-wosec2010 <- read.csv("~/Tesis/BaseEVES/pobbasiced2010.csv", sep = ";",
+wosec2010 <- read.csv("pobbasiced2010.csv", sep = ";",
                         stringsAsFactors = FALSE, fileEncoding = "latin1")
 wosec2010 <- rename(wosec2010, replace = c("Clave" = "idedomun"))
 wosec2010 <- rename(wosec2010, replace = c("edu15delay" = "wosec"))
@@ -197,15 +192,15 @@ summary(d$wosec)
 
 gini2005 <- d$IDH_gini
 summary(gini2005)
-gini2000 <- read.csv("~/Tesis/BaseEVES/gini2000.csv", sep = ";",
+gini2000 <- read.csv("gini2000.csv", sep = ";",
                   stringsAsFactors = FALSE, fileEncoding = "latin1")
-gini2000$gini <- as.numeric(cgini2000$gini)
+gini2000$gini <- as.numeric(gini2000$gini)
 gini2000$year <- 2000
 summary(gini2000)
 
 ## for the year 2010
 
-gini2010 <- read.csv("~/Tesis/BaseEVES/gini2010.csv", sep = ";",
+gini2010 <- read.csv("gini2010.csv", sep = ";",
                      stringsAsFactors = FALSE, fileEncoding = "latin1")
 gini2010$year <- 2010
 gini <- rbind(gini2000, gini2010)
@@ -214,7 +209,7 @@ d <- merge(d, gini, c("idedomun", "year"), all = TRUE)
 
 ############# 7 PIB per capita 2010 ##########
 
-IDH_ingpc <- read.csv("~/Tesis/BaseEVES/IDH_ingpc2010.csv", sep = ";",
+IDH_ingpc <- read.csv("IDH_ingpc2010.csv", sep = ";",
                       stringsAsFactors = FALSE, fileEncoding = "latin1")
 IDH_ingpc <- subset(IDH_ingpc, select = c("idedomun", "IDH_ingpc"), drop = TRUE)
 IDH_ingpc$year <- 2010
@@ -238,7 +233,7 @@ hist(d$IDH_ingpc, breaks = "FD", col = "green" )
 hist(d$loggdp, breaks = "FD", col = "green")
 
 # 8 Foreign Direct Investment
-ied <- read.dta13("~/Tesis/BaseEVES/IED.dta", convert.factors = TRUE)
+ied <- read.dta13("IED.dta", convert.factors = TRUE)
 as_tibble(ied)
 ied <- data.frame(ied, stringsAsFactors=FALSE)
  d <- merge(d, ied, c("idedo","year"), all= TRUE)
@@ -294,7 +289,7 @@ summary(d$localcomp)
 
 # 12 add homicidios SIMBAD
 
-violinegi <- read.dta13("~/Tesis/Masterdata/Homicidios_1990_2015/homicidios_simbad.dta", convert.factors = TRUE)
+violinegi <- read.dta13("homicidios_simbad.dta", convert.factors = TRUE)
 violinegi <- subset(violinegi, select =  -c(NomMun))
 head(violinegi)
 stat.desc(violinegi)
