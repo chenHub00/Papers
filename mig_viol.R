@@ -1,10 +1,10 @@
 rm(list = ls())
 
 # set working directory
-setwd("~/MEGA/work")
+#setwd("~/MEGA/work")
 
-################## 1 ###########
-#instalar y cargar paquetes
+################## 1. instalar y cargar paquetes ###########
+#
 
 # install.packages("stargazer"): #hace tablas de regresion y descriptivas
 # install.packages("foreign"): #reads non-R files
@@ -48,8 +48,7 @@ library(plyr)
 library(tibble)
 
 ########## 22. Poverty
-############### 2.1 ################## 
-# Prepare food poverty variable in the dataset for year 2000
+############### 2.1 Prepare food poverty variable in the dataset for year 2000 ##################
 
 pobalimentaria2000 <- read.csv("~/MEGA/Tesis/BaseEVES/pobalimentaria2000.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
@@ -64,9 +63,8 @@ pobalimentaria2000$pobalimentaria <- as.numeric(pobalimentaria2000$pobalimentari
 pobalimentaria2000$year <- 2000 # aniadimos el anio para el que vamos a juntar la base
 pobalimentaria2000 <- subset(pobalimentaria2000, select = -c(Municipio) )  # tiramos la variable municipio
 
-################## 2.2 ################
-# Prepare food poverty for the year 2010
-
+################## 2.2 Prepare food poverty for the year 2010 ################
+ 
 pobalimentaria2010 <- read.csv("~/MEGA/Tesis/BaseEVES/pobalimentaria2010.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")
 pobalimentaria2010 <- rename(pobalimentaria2010, replace =
@@ -85,8 +83,7 @@ pobalimentaria <- rbind(pobalimentaria2000, pobalimentaria2010)
 # tail(pobalimentaria)
 
 
-############# 2.3 #################
-# Ahora la juntamos con la base EVES
+############# 2.3 Ahora la juntamos con la base EVES #################
 #cargar la base 
 d <- read.csv("BaseEVES.csv", stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
 # leerla como un "Tibble"
@@ -125,8 +122,7 @@ illit2000$year <- 2000 # aniadimos el anio para el que vamos a juntar la base
 illit2000 <- subset(illit2000, select = -c(Nombre, Total, 
                                            Sabe.leer.y.escribir, No.sabe.leer.y.escribir) )  # tiramos varias variables
 
-################## 3.2 ################
-# illiteracy year 2010
+################## 3.2 illiteracy year 2010 ################
 
 illit2010 <- read.csv("~/MEGA/Tesis/BaseEVES/analfabeta2010.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")
@@ -155,8 +151,7 @@ d$poverty <- d$illit * d$pobalimentaria
 stat.desc(d$poverty)
 summary(d$poverty)
 
-##############  5  #################
-# we include population older than 15 without secondary education for the year 2000
+##############  5  we include population older than 15 without secondary education for the year 2000 #################
 
 wosec2000 <- read.csv("~/MEGA/Tesis/BaseEVES/pobbasiced2000.csv", sep = ";",
                       stringsAsFactors = FALSE, fileEncoding="latin1")
@@ -196,7 +191,7 @@ gini <- rbind(gini2000, gini2010)
 
 d <- merge(d, gini, c("idedomun", "year"), all = TRUE)
 
-############# 7 PIB per capita 2010
+############# 7 PIB per capita 2010 ###########3#
 
 IDH_ingpc <- read.csv("~/MEGA/Tesis/BaseEVES/IDH_ingpc2010.csv", sep = ";",
                       stringsAsFactors = FALSE, fileEncoding = "latin1")
@@ -213,41 +208,33 @@ head(e, n=35)
 e <- merge(e, IDH_ingpc, c("idedomun","year"), all = FALSE)
 
 
-
-
-           
-           by = intersect(names(idedomun), names(year))
-e <- merge(e, IDH_ingpc, by = intersect(names(idedomun), names(year)),
-      by.x = NULL, by.y = NULL, all = FALSE)
+#           by = intersect(names(idedomun), names(year))
+#e <- merge(e, IDH_ingpc, by = intersect(names(idedomun), names(year)),
+#      by.x = NULL, by.y = NULL, all = FALSE)
 
 head(e, n=35)
-, 
+#, 
 auxind<-match(IDH_ingpc$IDH_ingpc, e$IDH_ingpc)  # Stores the repeated rows in df1
 dfuni<-(rbind(e[,"IDH_ingpc"],e)[-auxind,])  # Merges both data.frames and erases the repeated rows from the first three colums of df1
 
 
-e <- merge(e, IDH_ingpc, c("idedomun", "year")
-           
-           
-           
-           
-           , by.x = NULL, by.y = NULL)
-,
-      all = TRUE, all.x = all, all.y = all, sort = TRUE)
+#e <- merge(e, IDH_ingpc, c("idedomun", "year") , 
+#           by.x = NULL, by.y = NULL),
+#      all = TRUE, all.x = all, all.y = all, sort = TRUE)
 
 
 
-e <- merge(e, IDH_ingpc, c("idedomun", "year"), all = TRUE)
+#e <- merge(e, IDH_ingpc, c("idedomun", "year"), all = TRUE)
 
 
 head(e, n = 35)
 as_tibble(e)
 
 
-merge(x, y, by = intersect(names(x), names(y)),
-      by.x = by, by.y = by, all = FALSE, all.x = all, all.y = all,
-      sort = TRUE, suffixes = c(".x",".y"),
-      incomparables = NULL, ...)
+#merge(x, y, by = intersect(names(x), names(y)),
+#      by.x = by, by.y = by, all = FALSE, all.x = all, all.y = all,
+#      sort = TRUE, suffixes = c(".x",".y"),
+#      incomparables = NULL, ...)
 head(d)
 summary(d)
 
@@ -255,9 +242,9 @@ d <- cbind(d, wosec, by=c("idedomun","year"), all=TRUE)
 d <- merge(d, IDH_ingpc2010, all = TRUE)
 as_tibble(d)
 summary(d$IDH_ing) 
-(d$idedomun, d$year, d$IDH_ingpc, n=35)
+#(d$idedomun, d$year, d$IDH_ingpc, n=35)
 
-zz <- merge(df1, df2, all = TRUE)
+#zz <- merge(df1, df2, all = TRUE)
 e <- subset(d,  select = c("idedomun", "year", "IDH_ingpc"))
 head(e, n = 35)
 head(IDH_ingpc2010)
@@ -269,7 +256,7 @@ geoIncendios[match(outliers$id, geoIncendios$id), ] <- outliers
 
 e <- subset(e, select = )
 wosec2000 <- subset(wosec2000, select = -c(Nombre, ratebasiced))
-e <- subset(e, )
+#e <- subset(e, )
 summary(e)
 some(e)
 head(e, n = 35)
