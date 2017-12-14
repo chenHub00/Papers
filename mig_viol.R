@@ -1,7 +1,8 @@
 rm(list = ls())
 
 # set working directory
-#setwd("~/MEGA/work")
+# setwd("~/MEGA/work")
+setwd("~/work")
 
 ################## 1. instalar y cargar paquetes ###########
 #
@@ -9,6 +10,8 @@ rm(list = ls())
 # install.packages("stargazer"): #hace tablas de regresion y descriptivas
 # install.packages("foreign"): #reads non-R files
 # install.packages("MASS"): #functions and econometric models
+# install.packages("dummies") #creates dummies
+# install.packages("dummy")
 
 # adapt my Rprofile.site to contain the following line,
 # making my default library path a directory not included in my R installation:
@@ -26,6 +29,7 @@ rm(list = ls())
 # install.packages("pastecs")
 # install.packages("ineq")
 # install.packages("tibble")
+# install.packages("readstata13")
 
 
 #check library list
@@ -46,11 +50,27 @@ library(pastecs)
 library(ineq)
 library(plyr)
 library(tibble)
+library(data.table)
+library(readstata13)
+library(dummies)
+library(data.table)
+
+#cargar la base 
+d <- read.csv("BaseEVES.csv", stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
+
+# corregir municipios en Chiapas
+d$idmun <- recode(d$idmun, "7121=121")
+d$idmun <- recode(d$idmun, "7120=120")
+
+
+
+
+
 
 ########## 22. Poverty
 ############### 2.1 Prepare food poverty variable in the dataset for year 2000 ##################
 
-pobalimentaria2000 <- read.csv("~/MEGA/Tesis/BaseEVES/pobalimentaria2000.csv", sep = ";",
+pobalimentaria2000 <- read.csv("~/Tesis/BaseEVES/pobalimentaria2000.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
 pobalimentaria2000 <- rename(pobalimentaria2000, replace = 
                                c("pobalimentaria2000" = "pobalimentaria"))
@@ -65,7 +85,8 @@ pobalimentaria2000 <- subset(pobalimentaria2000, select = -c(Municipio) )  # tir
 
 ################## 2.2 Prepare food poverty for the year 2010 ################
  
-pobalimentaria2010 <- read.csv("~/MEGA/Tesis/BaseEVES/pobalimentaria2010.csv", sep = ";",
+pobalimentaria2010 <- read.csv("~/Tesis/BaseEVES/pobalimentaria2010.csv", sep = ";",
+
                                stringsAsFactors = FALSE, fileEncoding="latin1")
 pobalimentaria2010 <- rename(pobalimentaria2010, replace =
                                c("Clave.del.municipio" = "idedomun"))
@@ -82,10 +103,10 @@ pobalimentaria <- rbind(pobalimentaria2000, pobalimentaria2010)
 # as_tibble(pobalimentaria)
 # tail(pobalimentaria)
 
-
 ############# 2.3 Ahora la juntamos con la base EVES #################
 #cargar la base 
 d <- read.csv("BaseEVES.csv", stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
+
 # leerla como un "Tibble"
 d <- as_tibble(d)
 d <- merge(d, pobalimentaria, by=c("idedomun","year"), all=TRUE)
@@ -104,7 +125,7 @@ d <- merge(d, pobalimentaria, by=c("idedomun","year"), all=TRUE)
 ############ 3. Literacy ################
 # 3.1 year 2000
 
-illit2000 <- read.csv("~/MEGA/Tesis/BaseEVES/analfabeta2000.csv", sep = ";",
+illit2000 <- read.csv("~/Tesis/BaseEVES/analfabeta2000.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
 str(illit2000) # hay que crear una proporcion de gente que sabe leer y escribir.
 
@@ -124,7 +145,7 @@ illit2000 <- subset(illit2000, select = -c(Nombre, Total,
 
 ################## 3.2 illiteracy year 2010 ################
 
-illit2010 <- read.csv("~/MEGA/Tesis/BaseEVES/analfabeta2010.csv", sep = ";",
+illit2010 <- read.csv("~/Tesis/BaseEVES/analfabeta2010.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")
 str(illit2010)
 illit2010 <- rename(illit2010, replace =
@@ -143,7 +164,7 @@ d <- merge(d, illit, by=c("idedomun","year"), all=TRUE)
 #  plot(d$pobalimentaria, d$illit, pty = "s")
 
 
-####### 4 now we create our poverty variable: poverty * illiteracy
+####### 4 now we create our poverty variable: poverty * illiteracy ####
 ##### and impute the data for the years lacking
 
 d$poverty <- d$illit * d$pobalimentaria 
@@ -153,7 +174,7 @@ summary(d$poverty)
 
 ##############  5  we include population older than 15 without secondary education for the year 2000 #################
 
-wosec2000 <- read.csv("~/MEGA/Tesis/BaseEVES/pobbasiced2000.csv", sep = ";",
+wosec2000 <- read.csv("~/Tesis/BaseEVES/pobbasiced2000.csv", sep = ";",
                       stringsAsFactors = FALSE, fileEncoding="latin1")
  summary(wosec2000)
 
@@ -162,7 +183,7 @@ wosec2000 <- subset(wosec2000, select = -c(Nombre, ratebasiced))
 wosec2000 <- rename(wosec2000, replace = c("Clave" = "idedomun") )
 wosec2000$year <- 2000
 
-wosec2010 <- read.csv("~/MEGA/Tesis/BaseEVES/pobbasiced2010.csv", sep = ";",
+wosec2010 <- read.csv("~/Tesis/BaseEVES/pobbasiced2010.csv", sep = ";",
                         stringsAsFactors = FALSE, fileEncoding = "latin1")
 wosec2010 <- rename(wosec2010, replace = c("Clave" = "idedomun"))
 wosec2010 <- rename(wosec2010, replace = c("edu15delay" = "wosec"))
@@ -176,7 +197,7 @@ summary(d$wosec)
 
 gini2005 <- d$IDH_gini
 summary(gini2005)
-gini2000 <- read.csv("~/MEGA/Tesis/BaseEVES/gini2000.csv", sep = ";",
+gini2000 <- read.csv("~/Tesis/BaseEVES/gini2000.csv", sep = ";",
                   stringsAsFactors = FALSE, fileEncoding = "latin1")
 gini2000$gini <- as.numeric(cgini2000$gini)
 gini2000$year <- 2000
@@ -184,113 +205,144 @@ summary(gini2000)
 
 ## for the year 2010
 
-gini2010 <- read.csv("~/MEGA/Tesis/BaseEVES/gini2010.csv", sep = ";",
+gini2010 <- read.csv("~/Tesis/BaseEVES/gini2010.csv", sep = ";",
                      stringsAsFactors = FALSE, fileEncoding = "latin1")
 gini2010$year <- 2010
 gini <- rbind(gini2000, gini2010)
 
 d <- merge(d, gini, c("idedomun", "year"), all = TRUE)
 
-############# 7 PIB per capita 2010 ###########3#
+############# 7 PIB per capita 2010 ##########
 
-IDH_ingpc <- read.csv("~/MEGA/Tesis/BaseEVES/IDH_ingpc2010.csv", sep = ";",
+IDH_ingpc <- read.csv("~/Tesis/BaseEVES/IDH_ingpc2010.csv", sep = ";",
                       stringsAsFactors = FALSE, fileEncoding = "latin1")
 IDH_ingpc <- subset(IDH_ingpc, select = c("idedomun", "IDH_ingpc"), drop = TRUE)
 IDH_ingpc$year <- 2010
-summary(IDH_ingpc)
+d$idedomuny <- paste0(d$idedomun, d$year)  # creamos un solo identificador
+IDH_ingpc$idedomuny <- paste0(IDH_ingpc$idedomun, IDH_ingpc$year)
 
-e <- subset(d,  select = c("idedomun", "year", "IDH_ingpc"))
-as_tibble(e)
-head(e, n=35)
+d <- data.frame(d, stringsAsFactors=FALSE) # declaramos que es un data frame
+IDH_ingpc <- data.frame(IDH_ingpc, stringsAsFactors=FALSE)
+swap <- IDH_ingpc$IDH_ingpc[match(d$idedomuny, IDH_ingpc$idedomuny)] # usamos match
+ok <- !is.na(swap)  # creamos un ok
+d$IDH_ingpc[ok] <- swap[ok]
 
-# merge 1:1 idedomun year using C:\Tesis\Masterdata\Masterdata8.dta # Stata solution
+# head(d$IDH_ingpc, n= 35)
+# summary(d$IDH_ingpc, n= 35)
 
-e <- merge(e, IDH_ingpc, c("idedomun","year"), all = FALSE)
+# create logarithmic expression of per capita GDP
+
+d$loggdp <- log(d$IDH_ingpc)
+stat.desc(d[,c("IDH_ingpc","loggdp")])
+hist(d$IDH_ingpc, breaks = "FD", col = "green" )
+hist(d$loggdp, breaks = "FD", col = "green")
+
+# 8 Foreign Direct Investment
+ied <- read.dta13("~/Tesis/BaseEVES/IED.dta", convert.factors = TRUE)
+as_tibble(ied)
+ied <- data.frame(ied, stringsAsFactors=FALSE)
+ d <- merge(d, ied, c("idedo","year"), all= TRUE)
+head(d$IED)
+some(d[,c("idedo","year","IED")])
+
+# explore panel data
+#coplot(IED ~ year|idedo, type="l", data=d)
+
+# 9 Municipal, gubernatorial and federal elections dummies
+d$munelect <- ifelse(is.na(d$vtotalr6), 0, 1)
+d$gubelect <- ifelse(is.na(d$vtotalr7), 0, 1)
+d$fedelect <- ifelse(is.na(d$vtotalr1), 0, 1)
+
+    # concurrence municipal + federal
+d$munfed <- d$munelect + d$fedelect
+d$fedconcur <- ifelse(d$munfed == 2, 1, 0)
+
+    # concurrence municipal + governor
+d$ms <- d$munelect + d$gubelect
+d$mungubconcur <- ifelse(d$ms == 2, 1, 0)
+
+    # concurrence municipal + governor + federal
+d$mgf <- d$munelect + d$gubelect + d$fedelect
+d$mungubfedconcur <- ifelse(d$mgf==3,1,0)
+
+# 10 Municipal Taagepera
+
+d$munPANsq <- (d$PAN_p6)^2
+d$munPRIsq <- (d$PRI_p6)^2
+d$munPRDsq <- (d$PRD_p6)^2
+d$munOtrossq <- (d$Otros_p6)^2
+
+d$munENP <- 1 / (d$munPANsq + d$munPRIsq + d$munPRDsq + d$munOtrossq)
+summary(d$munENP)
+
+# 11 gubernatorial Taagepera
+
+d$gubPANsq <- (d$PAN_p7)^2
+d$gubPRIsq <- (d$PRI_p7)^2
+d$gubPRDsq <- (d$PRD_p7)^2
+d$gubOtrossq = (d$Otros_p7)^2
+
+d$gubENP = 1 / (d$gubPANsq + d$gubPRIsq + d$gubPRDsq + d$gubOtrossq)
+
+# 11.4 we generate the interaction between municipal and state electoral competition
+
+d$localcomp <- d$munENP*d$gubENP
+
+    # we elevate localcomp to the 2
+d$localcomp2 <- (d$localcomp)^2
+summary(d$localcomp)
+
+# 12 add homicidios SIMBAD
+
+violinegi <- read.dta13("~/Tesis/Masterdata/Homicidios_1990_2015/homicidios_simbad.dta", convert.factors = TRUE)
+violinegi <- subset(violinegi, select =  -c(NomMun))
+head(violinegi)
+stat.desc(violinegi)
+
+d <- merge(d, violinegi, by=c("idedomun","year"), all=TRUE)
+
+    # create homicide rate SIMBAD and change NAs in homicide variable to 0
+
+d$horatesimbad <- (d$h*100000) / d$pob_total_est
+
+d$horatesimbad <- ifelse(is.na(d$horatesimbad), 0, d$horatesimbad)
+summary(d$horatesimbad)
+
+# revisar los municipios con 999 y 930, y los distritos de Oaxaca >= 570, tirarlos
+d <- subset(d, idmun <= 570)
+summary(d$idedomun)
+summary(d$horatesimbad)
+as_tibble(d$idedomun, d$NomMun)
+
+head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad")], n = 30)
+# histogram homicide rates for year 2010
+# y2010 <- d[ which(d$year=='2010'), ]
+# y2010 <- subset(y2010, y2010$horatesimbad < 100)
+# hist(y2010$horatesimbad, breaks = 'FD', col='green')
+
+# create logarithmic expression of homicide rates (year 2010)
 
 
-#           by = intersect(names(idedomun), names(year))
-#e <- merge(e, IDH_ingpc, by = intersect(names(idedomun), names(year)),
-#      by.x = NULL, by.y = NULL, all = FALSE)
+# 12 Lagged homicides
 
-head(e, n=35)
-#, 
-auxind<-match(IDH_ingpc$IDH_ingpc, e$IDH_ingpc)  # Stores the repeated rows in df1
-dfuni<-(rbind(e[,"IDH_ingpc"],e)[-auxind,])  # Merges both data.frames and erases the repeated rows from the first three colums of df1
+d$lag.hom <- c(NA, d$horatesimbad[-nrow(d)])
+d$lag.hom[which(!duplicated(d$idedomun))] <- NA
 
+head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","lag.hom")], n = 40)
 
-#e <- merge(e, IDH_ingpc, c("idedomun", "year") , 
-#           by.x = NULL, by.y = NULL),
-#      all = TRUE, all.x = all, all.y = all, sort = TRUE)
+# 13 Non-zero homicide variable: this is to have a dycothomic variable to make the Logit model (Trejo's model 2)
 
+d$nonzero = 0
+d$nonzero <- ifelse(d$homicidios > 0, 1, 0)
+summary(d$nonzero)
 
+# 14. Rural corporatism
+d$ruralcorp = d$PRI_p6 * d$part6
+summary(d[,c("ruralcorp", "PRI_p6", "part6")])
 
-#e <- merge(e, IDH_ingpc, c("idedomun", "year"), all = TRUE)
-
-
-head(e, n = 35)
-as_tibble(e)
-
-
-#merge(x, y, by = intersect(names(x), names(y)),
-#      by.x = by, by.y = by, all = FALSE, all.x = all, all.y = all,
-#      sort = TRUE, suffixes = c(".x",".y"),
-#      incomparables = NULL, ...)
-head(d)
-summary(d)
-
-d <- cbind(d, wosec, by=c("idedomun","year"), all=TRUE)
-d <- merge(d, IDH_ingpc2010, all = TRUE)
-as_tibble(d)
-summary(d$IDH_ing) 
-#(d$idedomun, d$year, d$IDH_ingpc, n=35)
-
-#zz <- merge(df1, df2, all = TRUE)
-e <- subset(d,  select = c("idedomun", "year", "IDH_ingpc"))
-head(e, n = 35)
-head(IDH_ingpc2010)
-
- e[match(IDH_ingpc2010$idedomun, IDH_ingpc2010$year,e$idedomun,e$year), ] <- e
-
-
-geoIncendios[match(outliers$id, geoIncendios$id), ] <- outliers
-
-e <- subset(e, select = )
-wosec2000 <- subset(wosec2000, select = -c(Nombre, ratebasiced))
-#e <- subset(e, )
-summary(e)
-some(e)
-head(e, n = 35)
-
-mapvalues = (e, e$IDH_ingpc, IDH_ingpc2010)
-mapvalues(e$IDH_ingpc, from = c(2, 3), to = c(5, 6))
-
-e[ingpc] = map[IDH_ingpc2010]
-
-
-gini <- rbind(gini2000, gini2010)
-f  <- replace(e, IDH_ingpc2010, values = c("NA"))
-
-ingpc <- r(e, IDH_ingpc2010, replace)
-
-head(IDH_ingpc2010)
-head(ingpc, 35)
-
-summary(ingpc)
-describe(d$IDH_ingpc)
-describe(IDH_ingpc2010)
-
-
-d$IDH_ingpc[match(IDH_ingpc2010$x1,df1$x1)] <- df2$x2
-
-for(idedomun, year in:nrow(IDH_ingpc2010)){
-  d$IDH_ingpc[]
-}
-
-
-for(id in 1:nrow(df2)){
-  df1$x2[df1$x1 %in% df2$x1[id]] <- df2$x2[id]
-}
-
-
-
+# 15. Population, we generate the natural logarythm but als the quadratic term
+d$logpop = log(d$pob_total_est)
+d$pop2 = d$pob_total_est^2
+d$pop = d$pob_total_est
+summary(d[, c("logpop", "pop2","pop")])
 
