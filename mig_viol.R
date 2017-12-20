@@ -5,7 +5,6 @@ getwd()
 #setwd("~/work")
 
 ################## 1. instalar y cargar paquetes ###########
-#
 
 # install.packages("stargazer"): #hace tablas de regresion y descriptivas
 # install.packages("foreign"): #reads non-R files
@@ -30,8 +29,9 @@ getwd()
 # install.packages("pastecs")
 # install.packages("ineq")
 # install.packages("tibble")
-# install.packages("readstata13")
-# install.packages("dummies")
+# install.packages("data.table")
+install.packages("readstata13")
+install.packages("dummies")
 
 #check library list
 # library()
@@ -236,12 +236,6 @@ hist(d$loggdp, breaks = "FD", col = "green")
 
 #### 8 Foreign Direct Investment ####
 ied <- read.dta13("IED.dta", convert.factors = TRUE)
-as_tibble(ied)
-ied <- data.frame(ied, stringsAsFactors=FALSE)
- d <- merge(d, ied, c("idedo","year"), all= TRUE)
-head(d$IED)
-d$ied <- d$IED
-some(d[,c("idedo","year","ied")])
 
 # explore panel data
 #coplot(IED ~ year|idedo, type="l", data=d)
@@ -292,19 +286,19 @@ summary(d$localcomp)
 
 #### 12 add homicidios SIMBAD ####
 
-violinegi <- read.dta13("homicidios_simbad.dta", convert.factors = TRUE)
-violinegi <- subset(violinegi, select =  -c(NomMun))
-head(violinegi)
-stat.desc(violinegi)
-
-d <- merge(d, violinegi, by=c("idedomun","year"), all=TRUE)
+# violinegi <- read.dta13("homicidios_simbad.dta", convert.factors = TRUE)
+# violinegi <- subset(violinegi, select =  -c(NomMun))
+# head(violinegi)
+# stat.desc(violinegi)
+# 
+# d <- merge(d, violinegi, by=c("idedomun","year"), all=TRUE)
 
     # create homicide rate SIMBAD and change NAs in homicide variable to 0
 
-d$horatesimbad <- (d$h*100000) / d$pob_total_est
+# d$horatesimbad <- (d$h*100000) / d$pob_total_est
 
-d$horatesimbad <- ifelse(is.na(d$horatesimbad), 0, d$horatesimbad)
-summary(d$horatesimbad)
+# d$horatesimbad <- ifelse(is.na(d$horatesimbad), 0, d$horatesimbad)
+# summary(d$horatesimbad)
 
 # revisar los municipios con 999 y 930, y los distritos de Oaxaca >= 570, tirarlos
 d <- subset(d, idmun <= 570)
@@ -312,7 +306,7 @@ summary(d$idedomun)
 summary(d$horatesimbad)
 as_tibble(d$idedomun, d$NomMun)
 
-head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad")], n = 30)
+# head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad")], n = 30)
 # histogram homicide rates for year 2010
 # y2010 <- d[ which(d$year=='2010'), ]
 # y2010 <- subset(y2010, y2010$horatesimbad < 100)
@@ -326,7 +320,7 @@ head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad")], n = 30)
 d$lag.hom <- c(NA, d$horatesimbad[-nrow(d)])
 d$lag.hom[which(!duplicated(d$idedomun))] <- NA
 
-head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","lag.hom")], n = 40)
+# head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","lag.hom")], n = 40)
 
 #### 13 Non-zero homicide variable: this is to have a dycothomic variable to make the Logit model (Trejo's model 2) ####
 
@@ -357,6 +351,242 @@ d$crisis = ifelse(d$year == 2003, 1, 0)
 d$crisis = ifelse(d$year == 2008, 1, 0)
 d$crisis = ifelse(d$year == 2009, 1, 0)
 d$crisis = ifelse(d$year == 2010, 1, 0)
+
+save(d, file = 'Dframe.Rdata')
+#### 17. Migration policy changes ####
+
+d$migpol = 0
+# gen migpol = 0
+#replace migpol = 1 if year >= 2004
+d$migpol = ifelse(d$year >= 2004, 1, 0) 
+
+#***  we drop the years before 2000
+d <- subset(d, d$year >= 2000)
+#keep if year >= 2000
+
+#### 18. Impute remittances for the missing 2001-2009 ####
+# d <- rename(d, replace = c("IIM_vivrem" = "rem"))
+#rename IIM_vivrem  rem
+# d$remVf = ifelse(d$year ==2010,d$rem,NA)
+# gen remVf = rem if year==2010
+
+# gsort - idedomun - year
+# replace remVf = remVf[_n-1] if remVf==. & idedomun[_n-1]==idedomun
+# sort idedomun year
+# gen remVi = rem if year==2000
+# replace remVi = remVi[_n-1] if remVi==. & idedomun[_n-1]==idedomun
+# gen Rrem = ((remVf/remVi)^.1) - 1
+# replace rem = rem[_n-1] * (1 + Rrem) if rem ==. & idedomun[_n-1]==idedomun
+# sum rem
+#### 18.2 logarithmic transformation of remmittances ####
+d$lnrem = log(d$rem)
+# gen lnrem = ln(rem)
+
+
+#### 19. Return migrants ####
+d <- rename(d, replace=c("IIM_viv_ret"="ret"))
+# rename IIM_viv_ret ret
+# linear imputation
+# # gen retVf = ret if year==2010
+# gsort - idedomun - year
+# replace retVf = retVf[_n-1] if retVf==. & idedomun[_n-1]==idedomun
+# sort idedomun year
+# gen retVi = ret if year==2000
+# replace retVi = retVi[_n-1] if retVi==. & idedomun[_n-1]==idedomun
+# gen Rret = ((retVf/retVi)^.1) - 1
+# replace ret = ret[_n-1] * (1+ Rret) if ret ==. & idedomun[_n-1]==idedomun
+# sort year idedomun
+# *by year: sum ret  //ret is perhaps not a good variable, there are many missing variables
+# sum ret
+
+#### 21 Emigrants ####
+d <- rename(d, replace = c("IIM_viv_emig"="emig")) 
+#rename IIM_viv_emig emig
+# gen emigVf = emig if year==2010
+# gsort - idedomun - year
+# replace emigVf = emigVf[_n-1] if emigVf==. & idedomun[_n-1]==idedomun
+# sort idedomun year
+# gen emigVi = emig if year==2000
+# replace emigVi = emigVi[_n-1] if emigVi==. & idedomun[_n-1]==idedomun
+# gen Remig = ((emigVf / emigVi)^.1) - 1
+# replace emig = emig[_n-1] * (1+Remig) if emig==. & idedomun[_n-1]==idedomun
+# sum emig
+#### 21.2 logarithmic transformation of emigrants ####
+d$lnemig = log(emig)
+#gen lnemig = ln(emig)
+
+
+#### 22 Now the complete migration index ####
+d <- rename(d, replace = c("IIM_indice"="migindex"))
+# rename IIM_indice migindex
+
+# gen migindexVf = migindex if year==2010
+# gsort- idedomuny year
+# replace migindexVf = migindexVf[_n-1] if migindexVf==. & idedomun[_n-1]==idedomun
+# sort idedomuny year
+# gen migindexVi = migindex if year==2000
+# replace migindexVi = migindexVi[_n-1] if migindexVi==. & idedomun[_n-1]==idedomun
+# gen Rmigindex = ((migindexVf / migindexVi)^.1) - 1
+# replace migindex = migindex[_n-1] * (1+Rmigindex) if migindex==. & idedomun[_n-1]==idedomun
+
+#### 23. divorcios ####
+d$divrate = (d$pob_divorcios/d$pob_total_est)*100000
+#gen divrate = (pob_divorcios / pob_total_est) * 100000
+
+#### 23.1 logaritmo natural de divorcios ####
+d$lndivrate = log(d$divrate)
+#gen lndivrate = ln(divrate)
+
+
+# * 20 what about sex ratio?
+# rename pob_relHM sexratio
+# order sexratio, a(hom_simbad)
+# 
+# * 20.1 now we impute the sex ratio data for the 2001 - 2004 period
+# gen sexratio2005 = sexratio if year == 2005
+# gsort - idedomun - year
+# replace sexratio2005 = sexratio2005[_n-1] if sexratio2005==. & idedomun[_n-1]==idedomun
+# sort idedomun year
+# gen sexratio2000 = sexratio if year==2000
+# replace sexratio2000 = sexratio2000[_n-1] if sexratio2000==. & idedomun[_n-1]==idedomun
+# gen Rsexratio = ((sexratio2005 / sexratio2000)^.2) - 1
+# replace sexratio = sexratio[_n-1] * (1 + Rsexratio) if sexratio==. & idedomun[_n+1]==idedomun & year >= 2000 & year <= 2005
+# 
+# * 20.2 now we impute the sex ratio data for the 2006-2009 period
+# gen sexratio2010 = sexratio if year == 2010
+# gsort - idedomun - year
+# replace sexratio2010 = sexratio2010[_n-1] if sexratio2010==. & idedomun[_n-1]==idedomun
+# sort idedomun year
+# replace sexratio2005 = sexratio2005[_n-1] if sexratio2005==. & idedomun[_n-1]==idedomun
+# gen R2sexratio = ((sexratio2010 / sexratio2005)^.2) - 1
+# replace sexratio = sexratio[_n-1] * (1 + R2sexratio) if sexratio==. & idedomun[_n+1]==idedomun & year >= 2005 & year <= 2010
+# 
+# * 21. percentage of young males
+# * rename young men var as "homjov", impute for missing years
+# 
+# rename pob_15a29HP homjov
+# gen homjovVf = homjov if year == 2010
+# gsort - idedomun - year
+# replace homjovVf = homjovVf[_n-1] if homjovVf==. & idedomun[_n-1]==idedomun
+# sort idedomun year
+# gen homjovVi = homjov if year==2000
+# replace homjovVi = homjovVi[_n-1] if homjovVi==. & idedomun[_n-1]==idedomun
+# gen Rhomjov = ((homjovVf / homjovVi)^.1) - 1
+# replace homjov = homjov[_n-1] * (1 + Rhomjov) if homjov==. & idedomun[_n+1]==idedomun
+# 
+# * 22. rename seg... as conviction rates "convrates"
+# rename seg_sentencia_total convrates
+# 
+# 
+# /* 23 Oportunidades
+# //gen oportunidades = deshum_oportfam / pob_vivienda_total
+# 
+# * 24.. Indigenous population
+# // simply use pob_ind, but also its natural logaritm
+# drop pob_indVf
+# gen pob_indVf = pob_ind if year == 2010
+# gsort - idedomun - year
+# replace pob_indVf = pob_indVf[_n-1] if pob_indVf==. & idedomun[_n-1]==idedomun
+# sort idedomun year
+# replace pob_indVf = pob_indVf[_n-1] if pob_indVf==. & idedomun[_n-1]==idedomun
+# 
+# //gen pob_indVint = pob_ind if year == 2005
+# //replace pob_indVint = pob_indVint[_n-1] if pob_indVint==. & idedomun[_n-1]==idedomun
+# //gsort- id
+# //replace pob_indVint = pob_indVint[_n-1] if pob_indVint==. & idedomun[_n-1]==idedomun //hay que hacerlo al derecho y al rev{es
+#   
+#   
+#   gen pob_indVi = pob_ind if year == 2000
+#   sort id
+#   replace pob_indVi = pob_indVi[_n-1] if pob_indVi==. & idedomun[_n-1]==idedomun
+#   
+#   gen Rpob_ind = ((pob_indVf / pob_indVi)^.1) - 1
+#   replace pob_ind = pob_ind[_n-1] * (1 + Rpob_ind) if pob_ind==. & idedomun[_n-1]==idedomun
+#   
+#   l NomMun year pob_ind in 1/200
+#   
+#   gen lnpob_ind = ln(pob_ind)
+#   */
+#     
+#     * 25. we generate regional dummy variables
+#   egen border = anymatch(idedo), values(2 5 8 19 26 28)
+#   egen norte = anymatch(idedo), values(2 5 8 10 19 24 25 26 28 32)
+#   egen pacifico = anymatch(idedo), values(2 3 6 7 12 14 16 18 20 25 26)
+#   
+#   *26 interaction % emig and rem
+#   gen emigrem = emig*rem
+#   
+#   * 27. create proportion of secondary schooling
+#   gen secschool = 1 - edu15delay
+#   sum secschool
+#   
+#   
+#   * 28. generate quadratic and logarithmic terms for electoral competition
+#   
+#   gen munENP2 = munENP^2
+#   gen lnmunENP = ln(munENP)
+#   
+#   ** 29. gen quadratic and logarithmic terms for return migration
+#   
+#   gen ret2 = ret^2
+#   gen lnret = ln(ret)
+#   
+#   * 30. generate interaction % education and remittances
+#   gen remedu = rem * secschool
+#   gen lnremedu = lnrem * secschool
+#   
+#   
+#   
+#   * interaction % emigration and abstentionism
+#   gen abst = 1 - part6
+#   replace abst = abst[_n-1] if abst==. & idedomun[_n-1]==idedomun
+#   gen socpolreject = abst*emig
+#   sum socpolreject
+#   
+#   **Mexican gdp growth rate
+#   gen mexgdpgr = .
+#   replace mexgdpgr = 5.3 if year == 2000
+#   replace mexgdpgr = -0.61 if year == 2001
+#   replace mexgdpgr = 0.13 if year == 2002
+#   replace mexgdpgr = 1.42 if year == 2003
+#   replace mexgdpgr = 4.3 if year == 2004
+#   replace mexgdpgr = 3.03 if year == 2005
+#   replace mexgdpgr = 5 if year == 2006
+#   replace mexgdpgr = 3.15 if year == 2007
+#   replace mexgdpgr = 1.4 if year == 2008
+#   replace mexgdpgr = -4.7 if year == 2009
+#   replace mexgdpgr = 5.11 if year == 2010
+#   
+#   **U.S. gdp growth rate
+#   gen usgdpgr = .
+#   replace usgdpgr = 4.09 if year == 2000
+#   replace usgdpgr = 0.98 if year == 2001
+#   replace usgdpgr = 1.79 if year ==2002
+#   replace usgdpgr = 2.81 if year == 2003
+#   replace usgdpgr = 3.79 if year == 2004
+#   replace usgdpgr = 3.35 if year == 2005
+#   replace usgdpgr = 2.67 if year == 2006
+#   replace usgdpgr = 1.77 if year == 2007
+#   replace usgdpgr = 1.4 if year == 2008
+#   replace usgdpgr =  -4.7 if year == 2009
+#   replace usgdpgr = 2.53 if year == 2010
+#   
+#   **detect the incumbent
+#   gen mincumbent = .
+#   replace mincumbent = 1 if PANtotal6 > PRItotal6 & PANtotal6 > PRDtotal6
+#   replace mincumbent = 2 if PRItotal6 > PANtotal6 & PRItotal6 > PRDtotal6
+#   replace mincumbent = 3 if PRDtotal6 > PANtotal6 & PRDtotal6 > PRItotal6
+#   sort idedomuny
+#   replace mincumbent = mincumbent[_n-1] if mincumbent==. & idedomun[_n-1]==idedomun
+#   
+#   
+#   
+#   * II. order the variables that will be used
+#   order hom_simbad laghom_simbad rem lnrem emig lnemig ret lnret remedu secschool sexratio homjov poverty ///
+#     gini gini2 pibpc munENP lnmunENP ruralcorp stateconcur fedconcur munelect gubelect ///
+#     fedelect ruralcorp divrate lndivrate lnpop convrates, a(year)
+#   
+  ## Alcohol intoxication
 
 # 16 Dummy economic crises
 d$crisis = 0
@@ -390,7 +620,7 @@ d$logcirc <- log(d$IIM_viv_circ)
 d$divrate <- d$pob_divorcios / d$pob_total_est
 
 
-##### II Modelos ############
+##### II. Modelos ############
 # descriptive statistics
 ds <- subset(d, select = c("horatesimbad","poverty", "wosec", "gini", "IDH_ingpc", "loggdp", "ied", "divrate", "ruralcorp", 
                            "munENP", "rem", "ret" ) )
@@ -400,5 +630,3 @@ stargazer(ds, type = "text", title="Descriptive statistics", digits=2, out="tabl
 #Model 1
 m1 <- glm.nb(d$horatesimbad ~ d$ret + d$poverty + d$wosec + d$gini + d$IDH_ingpc  + d$loggdp + d$ied + d$divrate + d$ruralcorp + factor(d$year), data = d)
 summary(m1)
-
-
