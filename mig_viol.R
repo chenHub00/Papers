@@ -12,6 +12,7 @@ getwd()
 # install.packages("MASS"): #functions and econometric models
 # install.packages("dummies") #creates dummies
 # install.packages("dummy")
+# install.packages("fBasics")
 
 # adapt my Rprofile.site to contain the following line,
 # making my default library path a directory not included in my R installation:
@@ -54,6 +55,7 @@ library(data.table)
 library(readstata13)
 library(dummies)
 library(data.table)
+library(fBasics)
 
 #cargar la base 
 d <- read.csv("BaseEVES.csv", stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
@@ -238,7 +240,8 @@ as_tibble(ied)
 ied <- data.frame(ied, stringsAsFactors=FALSE)
  d <- merge(d, ied, c("idedo","year"), all= TRUE)
 head(d$IED)
-some(d[,c("idedo","year","IED")])
+d$ied <- d$IED
+some(d[,c("idedo","year","ied")])
 
 # explore panel data
 #coplot(IED ~ year|idedo, type="l", data=d)
@@ -354,4 +357,48 @@ d$crisis = ifelse(d$year == 2003, 1, 0)
 d$crisis = ifelse(d$year == 2008, 1, 0)
 d$crisis = ifelse(d$year == 2009, 1, 0)
 d$crisis = ifelse(d$year == 2010, 1, 0)
+
+# 16 Dummy economic crises
+d$crisis = 0
+d$crisis <- ifelse(d$year == 1982, 1, 0)
+d$crisis <- ifelse(d$year == 1985, 1, 0)
+d$crisis <- ifelse(d$year == 1986, 1, 0)
+d$crisis <- ifelse(d$year == 1995, 1, 0)
+d$crisis <- ifelse(d$year == 2000, 1, 0)
+d$crisis <- ifelse(d$year == 2001, 1, 0)
+d$crisis <- ifelse(d$year == 2002, 1, 0)
+d$crisis <- ifelse(d$year == 2008, 1, 0)
+d$crisis <- ifelse(d$year == 2009, 1, 0)
+
+# rename remittances and transform the variable with log
+d$rem <- d$IIM_vivrem
+d$logrem <- log(d$IIM_vivrem)
+
+# rename return migration and transform the variable with log
+d$ret <- d$IIM_viv_ret
+d$logret <- log(d$IIM_viv_ret)
+
+# rename emigration and transform the variable with log
+d$emig <- d$IIM_viv_emig
+d$logemig <- log(d$IIM_viv_emig)
+
+# rename circular migration and transform the variable woth log
+d$circ <- d$IIM_viv_circ
+d$logcirc <- log(d$IIM_viv_circ)
+
+# divorce rate y transformacion logaritmica de esta variable
+d$divrate <- d$pob_divorcios / d$pob_total_est
+
+
+##### II Modelos ############
+# descriptive statistics
+ds <- subset(d, select = c("horatesimbad","poverty", "wosec", "gini", "IDH_ingpc", "loggdp", "ied", "divrate", "ruralcorp", 
+                           "munENP", "rem", "ret" ) )
+stargazer(ds, type = "text", title="Descriptive statistics", digits=2, out="table1.txt")
+
+
+#Model 1
+m1 <- glm.nb(d$horatesimbad ~ d$ret + d$poverty + d$wosec + d$gini + d$IDH_ingpc  + d$loggdp + d$ied + d$divrate + d$ruralcorp + factor(d$year), data = d)
+summary(m1)
+
 
