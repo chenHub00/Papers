@@ -30,8 +30,9 @@ getwd()
 # install.packages("ineq")
 # install.packages("tibble")
 # install.packages("data.table")
-install.packages("readstata13")
-install.packages("dummies")
+# install.packages("readstata13")
+# install.packages("dummies")
+# install.packages("fBasics")
 
 #check library list
 # library()
@@ -317,16 +318,16 @@ as_tibble(d$idedomun, d$NomMun)
 
 #### 12 Lagged homicides ####
 
-d$lag.hom <- c(NA, d$horatesimbad[-nrow(d)])
-d$lag.hom[which(!duplicated(d$idedomun))] <- NA
+# d$lag.hom <- c(NA, d$horatesimbad[-nrow(d)])
+# d$lag.hom[which(!duplicated(d$idedomun))] <- NA
 
 # head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","lag.hom")], n = 40)
 
 #### 13 Non-zero homicide variable: this is to have a dycothomic variable to make the Logit model (Trejo's model 2) ####
 
-d$nonzero = 0
-d$nonzero <- ifelse(d$homicidios > 0, 1, 0)
-summary(d$nonzero)
+# d$nonzero = 0
+# d$nonzero <- ifelse(d$homicidios > 0, 1, 0)
+# summary(d$nonzero)
 
 #### 14. Rural corporatism ####
 d$ruralcorp = d$PRI_p6 * d$part6
@@ -352,9 +353,7 @@ d$crisis = ifelse(d$year == 2008, 1, 0)
 d$crisis = ifelse(d$year == 2009, 1, 0)
 d$crisis = ifelse(d$year == 2010, 1, 0)
 
-save(d, file = 'Dframe.Rdata')
 #### 17. Migration policy changes ####
-
 d$migpol = 0
 # gen migpol = 0
 #replace migpol = 1 if year >= 2004
@@ -364,70 +363,34 @@ d$migpol = ifelse(d$year >= 2004, 1, 0)
 d <- subset(d, d$year >= 2000)
 #keep if year >= 2000
 
+
 #### 18. Impute remittances for the missing 2001-2009 ####
-# d <- rename(d, replace = c("IIM_vivrem" = "rem"))
-#rename IIM_vivrem  rem
 # d$remVf = ifelse(d$year ==2010,d$rem,NA)
 # gen remVf = rem if year==2010
-
-# gsort - idedomun - year
-# replace remVf = remVf[_n-1] if remVf==. & idedomun[_n-1]==idedomun
-# sort idedomun year
-# gen remVi = rem if year==2000
-# replace remVi = remVi[_n-1] if remVi==. & idedomun[_n-1]==idedomun
-# gen Rrem = ((remVf/remVi)^.1) - 1
-# replace rem = rem[_n-1] * (1 + Rrem) if rem ==. & idedomun[_n-1]==idedomun
-# sum rem
-#### 18.2 logarithmic transformation of remmittances ####
-d$lnrem = log(d$rem)
-# gen lnrem = ln(rem)
+# rename remittances and transform the variable with log
+d$rem <- d$IIM_vivrem
+d$logrem <- log(d$IIM_vivrem)
 
 
 #### 19. Return migrants ####
-d <- rename(d, replace=c("IIM_viv_ret"="ret"))
-# rename IIM_viv_ret ret
-# linear imputation
-# # gen retVf = ret if year==2010
-# gsort - idedomun - year
-# replace retVf = retVf[_n-1] if retVf==. & idedomun[_n-1]==idedomun
-# sort idedomun year
-# gen retVi = ret if year==2000
-# replace retVi = retVi[_n-1] if retVi==. & idedomun[_n-1]==idedomun
-# gen Rret = ((retVf/retVi)^.1) - 1
-# replace ret = ret[_n-1] * (1+ Rret) if ret ==. & idedomun[_n-1]==idedomun
-# sort year idedomun
-# *by year: sum ret  //ret is perhaps not a good variable, there are many missing variables
-# sum ret
+# rename return migration and transform the variable with log
+d$ret <- d$IIM_viv_ret
+d$logret <- log(d$IIM_viv_ret)
 
 #### 21 Emigrants ####
-d <- rename(d, replace = c("IIM_viv_emig"="emig")) 
-#rename IIM_viv_emig emig
-# gen emigVf = emig if year==2010
-# gsort - idedomun - year
-# replace emigVf = emigVf[_n-1] if emigVf==. & idedomun[_n-1]==idedomun
-# sort idedomun year
-# gen emigVi = emig if year==2000
-# replace emigVi = emigVi[_n-1] if emigVi==. & idedomun[_n-1]==idedomun
-# gen Remig = ((emigVf / emigVi)^.1) - 1
-# replace emig = emig[_n-1] * (1+Remig) if emig==. & idedomun[_n-1]==idedomun
-# sum emig
-#### 21.2 logarithmic transformation of emigrants ####
-d$lnemig = log(emig)
-#gen lnemig = ln(emig)
-
+# rename emigration and transform the variable with log
+d$emig <- d$IIM_viv_emig
+d$logemig <- log(d$IIM_viv_emig)
 
 #### 22 Now the complete migration index ####
 d <- rename(d, replace = c("IIM_indice"="migindex"))
 # rename IIM_indice migindex
+d$logmigindex <- log(d$migindex)
 
-# gen migindexVf = migindex if year==2010
-# gsort- idedomuny year
-# replace migindexVf = migindexVf[_n-1] if migindexVf==. & idedomun[_n-1]==idedomun
-# sort idedomuny year
-# gen migindexVi = migindex if year==2000
-# replace migindexVi = migindexVi[_n-1] if migindexVi==. & idedomun[_n-1]==idedomun
-# gen Rmigindex = ((migindexVf / migindexVi)^.1) - 1
-# replace migindex = migindex[_n-1] * (1+Rmigindex) if migindex==. & idedomun[_n-1]==idedomun
+# rename circular migration and transform the variable with log
+d$circ <- d$IIM_viv_circ
+d$logcirc <- log(d$IIM_viv_circ)
+
 
 #### 23. divorcios ####
 d$divrate = (d$pob_divorcios/d$pob_total_est)*100000
@@ -437,6 +400,7 @@ d$divrate = (d$pob_divorcios/d$pob_total_est)*100000
 d$lndivrate = log(d$divrate)
 #gen lndivrate = ln(divrate)
 
+save(d, file = 'Dframe.Rdata')
 
 # * 20 what about sex ratio?
 # rename pob_relHM sexratio
@@ -481,55 +445,33 @@ d$lndivrate = log(d$divrate)
 # /* 23 Oportunidades
 # //gen oportunidades = deshum_oportfam / pob_vivienda_total
 # 
-# * 24.. Indigenous population
+
+#### 24.. Indigenous population ####
 # // simply use pob_ind, but also its natural logaritm
-# drop pob_indVf
-# gen pob_indVf = pob_ind if year == 2010
-# gsort - idedomun - year
-# replace pob_indVf = pob_indVf[_n-1] if pob_indVf==. & idedomun[_n-1]==idedomun
-# sort idedomun year
-# replace pob_indVf = pob_indVf[_n-1] if pob_indVf==. & idedomun[_n-1]==idedomun
-# 
-# //gen pob_indVint = pob_ind if year == 2005
-# //replace pob_indVint = pob_indVint[_n-1] if pob_indVint==. & idedomun[_n-1]==idedomun
-# //gsort- id
-# //replace pob_indVint = pob_indVint[_n-1] if pob_indVint==. & idedomun[_n-1]==idedomun //hay que hacerlo al derecho y al rev{es
-#   
-#   
-#   gen pob_indVi = pob_ind if year == 2000
-#   sort id
-#   replace pob_indVi = pob_indVi[_n-1] if pob_indVi==. & idedomun[_n-1]==idedomun
-#   
-#   gen Rpob_ind = ((pob_indVf / pob_indVi)^.1) - 1
-#   replace pob_ind = pob_ind[_n-1] * (1 + Rpob_ind) if pob_ind==. & idedomun[_n-1]==idedomun
-#   
-#   l NomMun year pob_ind in 1/200
-#   
-#   gen lnpob_ind = ln(pob_ind)
-#   */
-#     
-#     * 25. we generate regional dummy variables
+d$lnpob_ind = log(d$pob_ind)
+
+#### 25. we generate regional dummy variables ####
 #   egen border = anymatch(idedo), values(2 5 8 19 26 28)
 #   egen norte = anymatch(idedo), values(2 5 8 10 19 24 25 26 28 32)
 #   egen pacifico = anymatch(idedo), values(2 3 6 7 12 14 16 18 20 25 26)
 #   
-#   *26 interaction % emig and rem
+####  26 interaction % emig and rem ####
 #   gen emigrem = emig*rem
-#   
-#   * 27. create proportion of secondary schooling
+  
+#### 27. create proportion of secondary schooling ####
 #   gen secschool = 1 - edu15delay
 #   sum secschool
-#   
-#   
-#   * 28. generate quadratic and logarithmic terms for electoral competition
+
+#### 28. generate quadratic and logarithmic terms for electoral competition ####
 #   
 #   gen munENP2 = munENP^2
 #   gen lnmunENP = ln(munENP)
 #   
-#   ** 29. gen quadratic and logarithmic terms for return migration
-#   
-#   gen ret2 = ret^2
-#   gen lnret = ln(ret)
+#### 29. gen quadratic and logarithmic terms for return migration ####
+d$ret2 = d$ret^2
+d$lnret = log(d$ret)
+# gen ret2 = ret^2
+# gen lnret = ln(ret)
 #   
 #   * 30. generate interaction % education and remittances
 #   gen remedu = rem * secschool
@@ -537,13 +479,14 @@ d$lndivrate = log(d$divrate)
 #   
 #   
 #   
-#   * interaction % emigration and abstentionism
+#### interaction % emigration and abstentionism ####
+d$abst = 1 - d$part6
 #   gen abst = 1 - part6
 #   replace abst = abst[_n-1] if abst==. & idedomun[_n-1]==idedomun
 #   gen socpolreject = abst*emig
 #   sum socpolreject
 #   
-#   **Mexican gdp growth rate
+#### Mexican gdp growth rate ####
 #   gen mexgdpgr = .
 #   replace mexgdpgr = 5.3 if year == 2000
 #   replace mexgdpgr = -0.61 if year == 2001
@@ -557,7 +500,7 @@ d$lndivrate = log(d$divrate)
 #   replace mexgdpgr = -4.7 if year == 2009
 #   replace mexgdpgr = 5.11 if year == 2010
 #   
-#   **U.S. gdp growth rate
+#### **U.S. gdp growth rate ####
 #   gen usgdpgr = .
 #   replace usgdpgr = 4.09 if year == 2000
 #   replace usgdpgr = 0.98 if year == 2001
@@ -571,7 +514,7 @@ d$lndivrate = log(d$divrate)
 #   replace usgdpgr =  -4.7 if year == 2009
 #   replace usgdpgr = 2.53 if year == 2010
 #   
-#   **detect the incumbent
+#### detect the incumbent ####
 #   gen mincumbent = .
 #   replace mincumbent = 1 if PANtotal6 > PRItotal6 & PANtotal6 > PRDtotal6
 #   replace mincumbent = 2 if PRItotal6 > PANtotal6 & PRItotal6 > PRDtotal6
@@ -581,43 +524,12 @@ d$lndivrate = log(d$divrate)
 #   
 #   
 #   
-#   * II. order the variables that will be used
+#### II. order the variables that will be used ####
 #   order hom_simbad laghom_simbad rem lnrem emig lnemig ret lnret remedu secschool sexratio homjov poverty ///
 #     gini gini2 pibpc munENP lnmunENP ruralcorp stateconcur fedconcur munelect gubelect ///
 #     fedelect ruralcorp divrate lndivrate lnpop convrates, a(year)
 #   
-  ## Alcohol intoxication
-
-# 16 Dummy economic crises
-d$crisis = 0
-d$crisis <- ifelse(d$year == 1982, 1, 0)
-d$crisis <- ifelse(d$year == 1985, 1, 0)
-d$crisis <- ifelse(d$year == 1986, 1, 0)
-d$crisis <- ifelse(d$year == 1995, 1, 0)
-d$crisis <- ifelse(d$year == 2000, 1, 0)
-d$crisis <- ifelse(d$year == 2001, 1, 0)
-d$crisis <- ifelse(d$year == 2002, 1, 0)
-d$crisis <- ifelse(d$year == 2008, 1, 0)
-d$crisis <- ifelse(d$year == 2009, 1, 0)
-
-# rename remittances and transform the variable with log
-d$rem <- d$IIM_vivrem
-d$logrem <- log(d$IIM_vivrem)
-
-# rename return migration and transform the variable with log
-d$ret <- d$IIM_viv_ret
-d$logret <- log(d$IIM_viv_ret)
-
-# rename emigration and transform the variable with log
-d$emig <- d$IIM_viv_emig
-d$logemig <- log(d$IIM_viv_emig)
-
-# rename circular migration and transform the variable woth log
-d$circ <- d$IIM_viv_circ
-d$logcirc <- log(d$IIM_viv_circ)
-
-# divorce rate y transformacion logaritmica de esta variable
-d$divrate <- d$pob_divorcios / d$pob_total_est
+## Alcohol intoxication
 
 
 ##### II. Modelos ############

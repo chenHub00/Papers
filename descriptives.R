@@ -1,0 +1,2 @@
+
+summary(d$ret2)
