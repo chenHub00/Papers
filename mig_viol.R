@@ -129,7 +129,7 @@ d <- merge(d, pobalimentaria, by=c("idedomun","year"), all=TRUE)
 # 3.1 year 2000
 
 illit2000 <- read.csv("~/Tesis/BaseEVES/analfabeta2000.csv", sep = ";",
-                               stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
+                      stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
 str(illit2000) # hay que crear una proporcion de gente que sabe leer y escribir.
 
 illit2000$illit <- illit2000$No.sabe.leer.y.escribir / illit2000$Total # aqui esta la proporcion
@@ -137,10 +137,10 @@ illit2000$illit <- illit2000$No.sabe.leer.y.escribir / illit2000$Total # aqui es
 # summary(illit2000$illit)
 # head(illit2000$illit)
 # as_tibble(illit2000)
- stat.desc(illit2000)
+stat.desc(illit2000)
 
- illit2000 <- rename(illit2000, replace = 
-                               c("Clave" = "idedomun")) # cambiar el nombre del identificador
+illit2000 <- rename(illit2000, replace = 
+                      c("Clave" = "idedomun")) # cambiar el nombre del identificador
 
 illit2000$year <- 2000 # aniadimos el anio para el que vamos a juntar la base
 illit2000 <- subset(illit2000, select = -c(Nombre, Total, 
@@ -150,10 +150,10 @@ illit2000 <- subset(illit2000, select = -c(Nombre, Total,
 # illiteracy year 2010
 
 illit2010 <- read.csv("~/Tesis/BaseEVES/analfabeta2010.csv", sep = ";",
-                               stringsAsFactors = FALSE, fileEncoding="latin1")
+                      stringsAsFactors = FALSE, fileEncoding="latin1")
 str(illit2010)
 illit2010 <- rename(illit2010, replace =
-                               c("Clave" = "idedomun"))
+                      c("Clave" = "idedomun"))
 illit2010$illit <- illit2010$No.sabe.leer.y.escribir / illit2010$Total
 illit2010<- subset(illit2010, select = c(idedomun, illit)) # tiramos vars
 illit2010$year <- 2010
@@ -181,7 +181,7 @@ summary(d$poverty)
 
 wosec2000 <- read.csv("~/Tesis/BaseEVES/pobbasiced2000.csv", sep = ";",
                       stringsAsFactors = FALSE, fileEncoding="latin1")
- summary(wosec2000)
+summary(wosec2000)
 
 wosec2000$wosec <- as.numeric(wosec2000$ratebasiced)
 wosec2000 <- subset(wosec2000, select = -c(Nombre, ratebasiced))
@@ -189,7 +189,7 @@ wosec2000 <- rename(wosec2000, replace = c("Clave" = "idedomun") )
 wosec2000$year <- 2000
 
 wosec2010 <- read.csv("~/Tesis/BaseEVES/pobbasiced2010.csv", sep = ";",
-                        stringsAsFactors = FALSE, fileEncoding = "latin1")
+                      stringsAsFactors = FALSE, fileEncoding = "latin1")
 wosec2010 <- rename(wosec2010, replace = c("Clave" = "idedomun"))
 wosec2010 <- rename(wosec2010, replace = c("edu15delay" = "wosec"))
 wosec2010$wosec <- as.numeric(wosec2010$wosec)
@@ -203,7 +203,7 @@ summary(d$wosec)
 gini2005 <- d$IDH_gini
 summary(gini2005)
 gini2000 <- read.csv("~/Tesis/BaseEVES/gini2000.csv", sep = ";",
-                  stringsAsFactors = FALSE, fileEncoding = "latin1")
+                     stringsAsFactors = FALSE, fileEncoding = "latin1")
 gini2000$gini <- as.numeric(gini2000$gini)
 gini2000$year <- 2000
 summary(gini2000)
@@ -249,7 +249,7 @@ hist(d$loggdp, breaks = "FD", col = "green")
 ied <- read.dta13("~/Tesis/BaseEVES/IED.dta", convert.factors = TRUE)
 as_tibble(ied)
 ied <- data.frame(ied, stringsAsFactors=FALSE)
- d <- merge(d, ied, c("idedo","year"), all= TRUE)
+d <- merge(d, ied, c("idedo","year"), all= TRUE)
 head(d$IED)
 d$ied <- d$IED
 some(d[,c("idedo","year","ied")])
@@ -263,15 +263,15 @@ d$munelect <- ifelse(is.na(d$vtotalr6), 0, 1)
 d$gubelect <- ifelse(is.na(d$vtotalr7), 0, 1)
 d$fedelect <- ifelse(is.na(d$vtotalr1), 0, 1)
 
-    # concurrence municipal + federal
+# concurrence municipal + federal
 d$munfed <- d$munelect + d$fedelect
 d$fedconcur <- ifelse(d$munfed == 2, 1, 0)
 
-    # concurrence municipal + governor
+# concurrence municipal + governor
 d$ms <- d$munelect + d$gubelect
 d$mungubconcur <- ifelse(d$ms == 2, 1, 0)
 
-    # concurrence municipal + governor + federal
+# concurrence municipal + governor + federal
 d$mgf <- d$munelect + d$gubelect + d$fedelect
 d$mungubfedconcur <- ifelse(d$mgf==3,1,0)
 
@@ -298,7 +298,7 @@ d$gubENP = 1 / (d$gubPANsq + d$gubPRIsq + d$gubPRDsq + d$gubOtrossq)
 
 d$localcomp <- d$munENP*d$gubENP
 
-    # we elevate localcomp to the 2
+# we elevate localcomp to the 2
 d$localcomp2 <- (d$localcomp)^2
 summary(d$localcomp)
 
@@ -311,7 +311,7 @@ stat.desc(violinegi)
 
 d <- merge(d, violinegi, by=c("idedomun","year"), all=TRUE)
 
-    # create homicide rate SIMBAD and change NAs in homicide variable to 0
+# create homicide rate SIMBAD and change NAs in homicide variable to 0
 
 d$horatesimbad <- (d$h*100000) / d$pob_total_est
 
@@ -386,6 +386,17 @@ d$logcirc <- log(d$IIM_viv_circ)
 # divorce rate y transformacion logaritmica de esta variable
 d$divrate <- d$pob_divorcios / d$pob_total_est
 
+# promedios de medias de homicidios para dos periodos 1996-2000 y 2006-2010.
+
+mav <- function(x,n=5){stats::filter(x,rep(1/n,n), sides=1)}
+
+setkey()
+d$mo.hr <- aggregate(d$horatesimbad, by=list(d$idedomun), FUN=mav)
+
+head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","mo.hr")], n = 40)
+
+  aggregate(x$Frequency, by=list(Category=x$Category), FUN=sum)
+
 
 ##### II Modelos ############
 # descriptive statistics
@@ -397,6 +408,3 @@ stargazer(ds, type = "text", title="Descriptive statistics", digits=2, out="tabl
 #Model 1
 m1 <- glm.nb(d$horatesimbad ~ d$ret + d$poverty + d$wosec + d$gini + d$IDH_ingpc  + d$loggdp + d$ied + d$divrate + d$ruralcorp + factor(d$year), data = d)
 summary(m1)
-
-
-
