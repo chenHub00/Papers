@@ -59,11 +59,11 @@ library(data.table)
 library(fBasics)
 
 #cargar la base 
-d <- read.csv("BaseEVES.csv", stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
+# d <- read.csv("BaseEVES.csv", stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
 
 # corregir municipios en Chiapas
-d$idmun <- recode(d$idmun, "7121=121")
-d$idmun <- recode(d$idmun, "7120=120")
+# d$idmun <- recode(d$idmun, "7121=121")
+# d$idmun <- recode(d$idmun, "7120=120")
 
 
 ########## 2. Poverty
@@ -292,20 +292,18 @@ d$localcomp2 <- (d$localcomp)^2
 summary(d$localcomp)
 
 #### 12 add homicidios SIMBAD ####
-
-# violinegi <- read.dta13("homicidios_simbad.dta", convert.factors = TRUE)
-# violinegi <- subset(violinegi, select =  -c(NomMun))
-# head(violinegi)
-# stat.desc(violinegi)
+violinegi <- read.dta13("homicidios_simbad.dta", convert.factors = TRUE)
+violinegi <- subset(violinegi, select =  -c(NomMun))
+head(violinegi)
+stat.desc(violinegi)
 # 
-# d <- merge(d, violinegi, by=c("idedomun","year"), all=TRUE)
+d <- merge(d, violinegi, by=c("idedomun","year"), all=TRUE)
 
 # create homicide rate SIMBAD and change NAs in homicide variable to 0
+d$horatesimbad <- (d$h*100000) / d$pob_total_est
 
-# d$horatesimbad <- (d$h*100000) / d$pob_total_est
-
-# d$horatesimbad <- ifelse(is.na(d$horatesimbad), 0, d$horatesimbad)
-# summary(d$horatesimbad)
+d$horatesimbad <- ifelse(is.na(d$horatesimbad), 0, d$horatesimbad)
+summary(d$horatesimbad)
 
 # revisar los municipios con 999 y 930, y los distritos de Oaxaca >= 570, tirarlos
 d <- subset(d, idmun <= 570)
@@ -313,27 +311,27 @@ summary(d$idedomun)
 summary(d$horatesimbad)
 as_tibble(d$idedomun, d$NomMun)
 
-# head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad")], n = 30)
+head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad")], n = 30)
 # histogram homicide rates for year 2010
-# y2010 <- d[ which(d$year=='2010'), ]
-# y2010 <- subset(y2010, y2010$horatesimbad < 100)
-# hist(y2010$horatesimbad, breaks = 'FD', col='green')
+y2010 <- d[ which(d$year=='2010'), ]
+y2010 <- subset(y2010, y2010$horatesimbad < 100)
+hist(y2010$horatesimbad, breaks = 'FD', col='green')
 
 # create logarithmic expression of homicide rates (year 2010)
 
 
 #### 12 Lagged homicides ####
 
-# d$lag.hom <- c(NA, d$horatesimbad[-nrow(d)])
-# d$lag.hom[which(!duplicated(d$idedomun))] <- NA
+d$lag.hom <- c(NA, d$horatesimbad[-nrow(d)])
+d$lag.hom[which(!duplicated(d$idedomun))] <- NA
 
-# head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","lag.hom")], n = 40)
+head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","lag.hom")], n = 40)
 
 #### 13 Non-zero homicide variable: this is to have a dycothomic variable to make the Logit model (Trejo's model 2) ####
 
-# d$nonzero = 0
-# d$nonzero <- ifelse(d$homicidios > 0, 1, 0)
-# summary(d$nonzero)
+d$nonzero = 0
+d$nonzero <- ifelse(d$homicidios > 0, 1, 0)
+summary(d$nonzero)
 
 #### 14. Rural corporatism ####
 d$ruralcorp = d$PRI_p6 * d$part6
@@ -405,8 +403,8 @@ d$divrate = (d$pob_divorcios/d$pob_total_est)*100000
 # promedios de medias de homicidios para dos periodos 1996-2000 y 2006-2010.
 mav <- function(x,n=5){stats::filter(x,rep(1/n,n), sides=1)}
 
-setkey()
-d$mo.hr <- aggregate(d$horatesimbad, by=list(d$idedomun), FUN=mav)
+#setkey()
+# d$mo.hr <- aggregate(d$horatesimbad, by=list(d$idedomun), FUN=mav)
 
 head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","mo.hr")], n = 40)
 # aggregate(x$Frequency, by=list(Category=x$Category), FUN=sum)
