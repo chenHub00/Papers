@@ -132,22 +132,21 @@ illit2000$illit <- illit2000$No.sabe.leer.y.escribir / illit2000$Total # aqui es
 # summary(illit2000$illit)
 # head(illit2000$illit)
 # as_tibble(illit2000)
- stat.desc(illit2000)
+stat.desc(illit2000)
 
- illit2000 <- rename(illit2000, replace = 
-                               c("Clave" = "idedomun")) # cambiar el nombre del identificador
+illit2000 <- rename(illit2000, replace = 
+                      c("Clave" = "idedomun")) # cambiar el nombre del identificador
 
 illit2000$year <- 2000 # aniadimos el anio para el que vamos a juntar la base
 illit2000 <- subset(illit2000, select = -c(Nombre, Total, 
                                            Sabe.leer.y.escribir, No.sabe.leer.y.escribir) )  # tiramos varias variables
 
 ################## 3.2 illiteracy year 2010 ################
-
 illit2010 <- read.csv("analfabeta2010.csv", sep = ";",
                                stringsAsFactors = FALSE, fileEncoding="latin1")
 str(illit2010)
 illit2010 <- rename(illit2010, replace =
-                               c("Clave" = "idedomun"))
+                      c("Clave" = "idedomun"))
 illit2010$illit <- illit2010$No.sabe.leer.y.escribir / illit2010$Total
 illit2010<- subset(illit2010, select = c(idedomun, illit)) # tiramos vars
 illit2010$year <- 2010
@@ -174,7 +173,7 @@ summary(d$poverty)
 
 wosec2000 <- read.csv("pobbasiced2000.csv", sep = ";",
                       stringsAsFactors = FALSE, fileEncoding="latin1")
- summary(wosec2000)
+summary(wosec2000)
 
 wosec2000$wosec <- as.numeric(wosec2000$ratebasiced)
 wosec2000 <- subset(wosec2000, select = -c(Nombre, ratebasiced))
@@ -238,6 +237,13 @@ hist(d$loggdp, breaks = "FD", col = "green")
 #### 8 Foreign Direct Investment ####
 ied <- read.dta13("IED.dta", convert.factors = TRUE)
 
+as_tibble(ied)
+ied <- data.frame(ied, stringsAsFactors=FALSE)
+ d <- merge(d, ied, c("idedo","year"), all= TRUE)
+head(d$IED)
+d$ied <- d$IED
+some(d[,c("idedo","year","ied")])
+
 # explore panel data
 #coplot(IED ~ year|idedo, type="l", data=d)
 
@@ -246,15 +252,15 @@ d$munelect <- ifelse(is.na(d$vtotalr6), 0, 1)
 d$gubelect <- ifelse(is.na(d$vtotalr7), 0, 1)
 d$fedelect <- ifelse(is.na(d$vtotalr1), 0, 1)
 
-    # concurrence municipal + federal
+# concurrence municipal + federal
 d$munfed <- d$munelect + d$fedelect
 d$fedconcur <- ifelse(d$munfed == 2, 1, 0)
 
-    # concurrence municipal + governor
+# concurrence municipal + governor
 d$ms <- d$munelect + d$gubelect
 d$mungubconcur <- ifelse(d$ms == 2, 1, 0)
 
-    # concurrence municipal + governor + federal
+# concurrence municipal + governor + federal
 d$mgf <- d$munelect + d$gubelect + d$fedelect
 d$mungubfedconcur <- ifelse(d$mgf==3,1,0)
 
@@ -281,7 +287,7 @@ d$gubENP = 1 / (d$gubPANsq + d$gubPRIsq + d$gubPRDsq + d$gubOtrossq)
 
 d$localcomp <- d$munENP*d$gubENP
 
-    # we elevate localcomp to the 2
+# we elevate localcomp to the 2
 d$localcomp2 <- (d$localcomp)^2
 summary(d$localcomp)
 
@@ -294,7 +300,7 @@ summary(d$localcomp)
 # 
 # d <- merge(d, violinegi, by=c("idedomun","year"), all=TRUE)
 
-    # create homicide rate SIMBAD and change NAs in homicide variable to 0
+# create homicide rate SIMBAD and change NAs in homicide variable to 0
 
 # d$horatesimbad <- (d$h*100000) / d$pob_total_est
 
@@ -391,16 +397,23 @@ d$logmigindex <- log(d$migindex)
 d$circ <- d$IIM_viv_circ
 d$logcirc <- log(d$IIM_viv_circ)
 
-
 #### 23. divorcios ####
+# divorce rate y transformacion logaritmica de esta variable
 d$divrate = (d$pob_divorcios/d$pob_total_est)*100000
 #gen divrate = (pob_divorcios / pob_total_est) * 100000
+
+# promedios de medias de homicidios para dos periodos 1996-2000 y 2006-2010.
+mav <- function(x,n=5){stats::filter(x,rep(1/n,n), sides=1)}
+
+setkey()
+d$mo.hr <- aggregate(d$horatesimbad, by=list(d$idedomun), FUN=mav)
+
+head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","mo.hr")], n = 40)
+# aggregate(x$Frequency, by=list(Category=x$Category), FUN=sum)
 
 #### 23.1 logaritmo natural de divorcios ####
 d$lndivrate = log(d$divrate)
 #gen lndivrate = ln(divrate)
-
-save(d, file = 'Dframe.Rdata')
 
 # * 20 what about sex ratio?
 # rename pob_relHM sexratio
@@ -531,6 +544,7 @@ d$abst = 1 - d$part6
 #   
 ## Alcohol intoxication
 
+save(d, file = 'Dframe.Rdata')
 
 ##### II. Modelos ############
 # descriptive statistics
