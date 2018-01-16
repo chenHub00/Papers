@@ -40,6 +40,7 @@ getwd()
 # poner la base en el directorio de trabajo: "~/MEGA/work"
 
 # cargar paquetes 
+library(stargazer)
 library(foreign)
 library(stargazer)
 library(MASS)
@@ -57,6 +58,7 @@ library(readstata13)
 library(dummies)
 library(data.table)
 library(fBasics)
+library(stats)
 
 #cargar la base 
 # d <- read.csv("BaseEVES.csv", stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
@@ -550,6 +552,7 @@ ds <- subset(d, select = c("horatesimbad","poverty", "wosec", "gini", "IDH_ingpc
                            "munENP", "rem", "ret" ) )
 stargazer(ds, type = "text", title="Descriptive statistics", digits=2, out="table1.txt")
 
+save(ds, file = 'DS.Rdata')
 
 #Model 1
 m1 <- glm.nb(d$horatesimbad ~ d$ret + d$poverty + d$wosec + d$gini + d$IDH_ingpc  + d$loggdp + d$ied + d$divrate + d$ruralcorp + factor(d$year), data = d)
