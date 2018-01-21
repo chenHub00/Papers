@@ -383,28 +383,92 @@ d$logemig <- log(d$IIM_viv_emig)
 d$circ <- d$IIM_viv_circ
 d$logcirc <- log(d$IIM_viv_circ)
 
+# create interaction % remittances and education
+d$edu <- 1 - d$illit
+d$remedu <- d$rem * d$edu
+
+
 # divorce rate y transformacion logaritmica de esta variable
 d$divrate <- d$pob_divorcios / d$pob_total_est
+
+# tasa de sentencia condenatorial
+d$convrates <- d$seg_sentencia_total
+
+# % hombres jóvenes
+d$youngmales <- d$pob_15a29HP
+
+# % hombres jóvenes y mujeres jóvenes
+d$sexratio <- d$youngmales / d$pob_15a29MP
+summary(d$sexratio)
+
+
+
+# condición de frontera
+d$border = 0
+d$border <- ifelse(d$idedo == 2, 1, 0)
+d$border <- ifelse(d$idedo == 5, 1, 0)
+d$border <- ifelse(d$idedo == 8, 1, 0)
+d$border <- ifelse(d$idedo == 19, 1, 0)
+d$border <- ifelse(d$idedo == 26, 1, 0)
+d$border <- ifelse(d$idedo == 28, 1, 0)
+
+# condición de norte
+d$norte = 0
+d$norte <- ifelse(d$idedo == 2, 1,0)
+d$norte <- ifelse(d$idedo == 5,1,0)
+d$norte <- ifelse(d$idedo == 8,1,0)
+d$norte <- ifelse(d$idedo == 10,1,0)
+d$norte <- ifelse(d$idedo == 19,1,0)
+d$norte <- ifelse(d$idedo == 24,1,0)
+d$norte <- ifelse(d$idedo == 25,1,0)
+d$norte <- ifelse(d$idedo == 26,1,0)
+d$norte <- ifelse(d$idedo == 28,1,0)
+d$norte <- ifelse(d$idedo == 32,1,0)
+
+#condición de pacífico
+
+d$pacifico == 0
+d$pacifico <- ifelse(d$idedo == 2,1,0)
+d$pacifico <- ifelse(d$idedo == 3,1,0)
+d$pacifico <- ifelse(d$idedo == 6,1,0)
+d$pacifico <- ifelse(d$idedo == 7,1,0)
+d$pacifico <- ifelse(d$idedo == 12,1,0)
+d$pacifico <- ifelse(d$idedo == 14,1,0)
+d$pacifico <- ifelse(d$idedo == 16,1,0)
+d$pacifico <- ifelse(d$idedo == 18,1,0)
+d$pacifico <- ifelse(d$idedo == 20,1,0)
+d$pacifico <- ifelse(d$idedo == 25,1,0)
+d$pacifico <- ifelse(d$idedo == 26,1,0)
+
 
 # promedios de medias de homicidios para dos periodos 1996-2000 y 2006-2010.
 
 mav <- function(x,n=5){stats::filter(x,rep(1/n,n), sides=1)}
+d$mhr <- ave(d$horatesimbad, d$idedomun, FUN = mav)
+head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","mhr")], n = 40)
 
-setkey()
-d$mo.hr <- aggregate(d$horatesimbad, by=list(d$idedomun), FUN=mav)
-
-head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","mo.hr")], n = 40)
-
-  aggregate(x$Frequency, by=list(Category=x$Category), FUN=sum)
-
+# pequeño cambio de nombre para no hacernos bolas
+d$homicide_counts <- d$h
 
 ##### II Modelos ############
-# descriptive statistics
-ds <- subset(d, select = c("horatesimbad","poverty", "wosec", "gini", "IDH_ingpc", "loggdp", "ied", "divrate", "ruralcorp", 
-                           "munENP", "rem", "ret" ) )
-stargazer(ds, type = "text", title="Descriptive statistics", digits=2, out="table1.txt")
+# descriptive statistics (sin transformación)
+ds <- subset(d, select = c("homicide_counts","horatesimbad", "emig","rem",
+                           "ret","circ", "edu", "remedu","munENP","poverty",
+                           "wosec", "gini", "IDH_ingpc", "ied", "divrate",
+                           "ruralcorp", "munENP", "youngmales", "sexratio", "gini",
+                           "IDH_ingpc", "pob_ind", "pob_total", "ruralcorp", "divrate",
+                           "convrates", "border",  "pob_total_est"))
+            stargazer(ds, type = "text", title="Descriptive statistics", digits=2, out="table1.txt")
+
+# estadísticos descriptivos (con transformación)
+dt <- subset(d, select = c("loggdp", "logrem", "logret", "logemig", "logcirc"))
+             stargazer(dt, type = "text", title="Descriptive statistics", digits=2, out="table2.txt")
+
+
 
 
 #Model 1
-m1 <- glm.nb(d$horatesimbad ~ d$ret + d$poverty + d$wosec + d$gini + d$IDH_ingpc  + d$loggdp + d$ied + d$divrate + d$ruralcorp + factor(d$year), data = d)
+m1 <- glm.nb(d$horatesimbad ~ d$logemig + d$logrem + d$logret + d$logcirc + d$poverty + d$wosec 
+             + d$gini + d$loggdp + d$ied + d$divrate + d$ruralcorp + factor(d$year) data = d)
 summary(m1)
+
