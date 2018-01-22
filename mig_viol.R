@@ -451,14 +451,11 @@ d$pacifico <- ifelse(d$idedo == 20,1,0)
 d$pacifico <- ifelse(d$idedo == 25,1,0)
 d$pacifico <- ifelse(d$idedo == 26,1,0)
 
-
 # promedios de medias de homicidios para dos periodos 1996-2000 y 2006-2010.
 mav <- function(x,n=5){stats::filter(x,rep(1/n,n), sides=1)}
 d$mhr <- ave(d$horatesimbad, d$idedomun, FUN = mav)
 head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","mhr")], n = 40)
 
-#setkey(d$idedomun)
-#d$mo.hr <- aggregate(d$horatesimbad, by=list(d$idedomun), FUN=mav)
 # pequeño cambio de nombre para no hacernos bolas
 d$homicide_counts <- d$h
 
@@ -533,4 +530,5 @@ dt <- subset(d, select = c("loggdp", "logrem", "logret", "logemig", "logcirc","i
 stargazer(dt, type = "text", title="Descriptive statistics", digits=2, out="table2.txt")
 
 save(dt, file = 'DT.Rdata')
+
 
