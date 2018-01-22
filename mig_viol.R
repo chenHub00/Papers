@@ -40,21 +40,20 @@ getwd()
 # poner la base en el directorio de trabajo: "~/MEGA/work"
 
 # cargar paquetes 
-library(stargazer)
+library(stargazer) # stargazer
 library(foreign)
-library(stargazer)
-library(MASS)
+library(MASS) # glm.nb
 library(survival)
-library(car)
+library(car) # some
 library(devtools)
 library(lattice)
 library(Hmisc)
-library(pastecs)
+library(pastecs) # stat.desc
 library(ineq)
-library(plyr)
-library(tibble)
-library(data.table)
-library(readstata13)
+library(plyr) # rename
+library(tibble) # as_tibble
+library(data.table) # setkey
+library(readstata13) # read.dta13
 library(dummies)
 library(data.table)
 library(fBasics)
@@ -105,11 +104,11 @@ pobalimentaria <- rbind(pobalimentaria2000, pobalimentaria2010)
 
 ############# 2.3 Ahora la juntamos con la base EVES #################
 #cargar la base OTRAVEZ?
-d <- read.csv("BaseEVES.csv", stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
+eves <- read.csv("BaseEVES.csv", stringsAsFactors = FALSE, fileEncoding="latin1")  ## latin1 sirve para leer los acentos
 
 # leerla como un "Tibble"
-d <- as_tibble(d)
-d <- merge(d, pobalimentaria, by=c("idedomun","year"), all=TRUE)
+eves <- as_tibble(eves)
+d <- merge(eves, pobalimentaria, by=c("idedomun","year"), all=TRUE)
 
 
 # graph the year difference
@@ -134,7 +133,7 @@ illit2000$illit <- illit2000$No.sabe.leer.y.escribir / illit2000$Total # aqui es
 # summary(illit2000$illit)
 # head(illit2000$illit)
 # as_tibble(illit2000)
-stat.desc(illit2000)
+# stat.desc(illit2000)
 
 illit2000 <- rename(illit2000, replace = 
                       c("Clave" = "idedomun")) # cambiar el nombre del identificador
@@ -241,7 +240,7 @@ ied <- read.dta13("IED.dta", convert.factors = TRUE)
 
 as_tibble(ied)
 ied <- data.frame(ied, stringsAsFactors=FALSE)
- d <- merge(d, ied, c("idedo","year"), all= TRUE)
+d <- merge(d, ied, c("idedo","year"), all= TRUE)
 head(d$IED)
 d$ied <- d$IED
 some(d[,c("idedo","year","ied")])
@@ -397,11 +396,11 @@ d$logmigindex <- log(d$migindex)
 d$circ <- d$IIM_viv_circ
 d$logcirc <- log(d$IIM_viv_circ)
 
-#### 23. divorcios ####
 # create interaction % remittances and education
 d$edu <- 1 - d$illit
 d$remedu <- d$rem * d$edu
 
+#### 23. divorcios ####
 # divorce rate y transformacion logaritmica de esta variable
 d$divrate = (d$pob_divorcios/d$pob_total_est)*100000
 #gen divrate = (pob_divorcios / pob_total_est) * 100000
@@ -415,8 +414,6 @@ d$youngmales <- d$pob_15a29HP
 # % hombres jóvenes y mujeres jóvenes
 d$sexratio <- d$youngmales / d$pob_15a29MP
 summary(d$sexratio)
-
-
 
 # condición de frontera
 d$border = 0
@@ -441,7 +438,6 @@ d$norte <- ifelse(d$idedo == 28,1,0)
 d$norte <- ifelse(d$idedo == 32,1,0)
 
 #condición de pacífico
-
 d$pacifico == 0
 d$pacifico <- ifelse(d$idedo == 2,1,0)
 d$pacifico <- ifelse(d$idedo == 3,1,0)
@@ -461,12 +457,12 @@ mav <- function(x,n=5){stats::filter(x,rep(1/n,n), sides=1)}
 d$mhr <- ave(d$horatesimbad, d$idedomun, FUN = mav)
 head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","mhr")], n = 40)
 
-setkey()
-d$mo.hr <- aggregate(d$horatesimbad, by=list(d$idedomun), FUN=mav)
+#setkey(d$idedomun)
+#d$mo.hr <- aggregate(d$horatesimbad, by=list(d$idedomun), FUN=mav)
 # pequeño cambio de nombre para no hacernos bolas
 d$homicide_counts <- d$h
 
-head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","mo.hr")], n = 40)
+#head(d[,c("idedo","idedomun","NomMun","year", "h", "horatesimbad","mo.hr")], n = 40)
 # aggregate(x$Frequency, by=list(Category=x$Category), FUN=sum)
 
 #### 23.1 logaritmo natural de divorcios ####
@@ -474,69 +470,16 @@ d$lndivrate = log(d$divrate)
 #gen lndivrate = ln(divrate)
 
 # * 20 what about sex ratio?
-# rename pob_relHM sexratio
-# order sexratio, a(hom_simbad)
-# 
-# * 20.1 now we impute the sex ratio data for the 2001 - 2004 period
-# gen sexratio2005 = sexratio if year == 2005
-# gsort - idedomun - year
-# replace sexratio2005 = sexratio2005[_n-1] if sexratio2005==. & idedomun[_n-1]==idedomun
-# sort idedomun year
-# gen sexratio2000 = sexratio if year==2000
-# replace sexratio2000 = sexratio2000[_n-1] if sexratio2000==. & idedomun[_n-1]==idedomun
-# gen Rsexratio = ((sexratio2005 / sexratio2000)^.2) - 1
-# replace sexratio = sexratio[_n-1] * (1 + Rsexratio) if sexratio==. & idedomun[_n+1]==idedomun & year >= 2000 & year <= 2005
-# 
-# * 20.2 now we impute the sex ratio data for the 2006-2009 period
-# gen sexratio2010 = sexratio if year == 2010
-# gsort - idedomun - year
-# replace sexratio2010 = sexratio2010[_n-1] if sexratio2010==. & idedomun[_n-1]==idedomun
-# sort idedomun year
-# replace sexratio2005 = sexratio2005[_n-1] if sexratio2005==. & idedomun[_n-1]==idedomun
-# gen R2sexratio = ((sexratio2010 / sexratio2005)^.2) - 1
-# replace sexratio = sexratio[_n-1] * (1 + R2sexratio) if sexratio==. & idedomun[_n+1]==idedomun & year >= 2005 & year <= 2010
-# 
-# * 21. percentage of young males
-# * rename young men var as "homjov", impute for missing years
-# 
-# rename pob_15a29HP homjov
-# gen homjovVf = homjov if year == 2010
-# gsort - idedomun - year
-# replace homjovVf = homjovVf[_n-1] if homjovVf==. & idedomun[_n-1]==idedomun
-# sort idedomun year
-# gen homjovVi = homjov if year==2000
-# replace homjovVi = homjovVi[_n-1] if homjovVi==. & idedomun[_n-1]==idedomun
-# gen Rhomjov = ((homjovVf / homjovVi)^.1) - 1
-# replace homjov = homjov[_n-1] * (1 + Rhomjov) if homjov==. & idedomun[_n+1]==idedomun
-# 
-# * 22. rename seg... as conviction rates "convrates"
-# rename seg_sentencia_total convrates
-# 
-# 
-# /* 23 Oportunidades
-# //gen oportunidades = deshum_oportfam / pob_vivienda_total
-# 
+summary(d$sexratio)
 
 #### 24.. Indigenous population ####
 # // simply use pob_ind, but also its natural logaritm
 d$lnpob_ind = log(d$pob_ind)
 
-#### 25. we generate regional dummy variables ####
-#   egen border = anymatch(idedo), values(2 5 8 19 26 28)
-#   egen norte = anymatch(idedo), values(2 5 8 10 19 24 25 26 28 32)
-#   egen pacifico = anymatch(idedo), values(2 3 6 7 12 14 16 18 20 25 26)
-#   
 ####  26 interaction % emig and rem ####
 #   gen emigrem = emig*rem
-  
-#### 27. create proportion of secondary schooling ####
-#   gen secschool = 1 - edu15delay
-#   sum secschool
+d$emigrem = d$emig * d$rem
 
-#### 28. generate quadratic and logarithmic terms for electoral competition ####
-#   
-#   gen munENP2 = munENP^2
-#   gen lnmunENP = ln(munENP)
 #   
 #### 29. gen quadratic and logarithmic terms for return migration ####
 d$ret2 = d$ret^2
@@ -544,47 +487,17 @@ d$lnret = log(d$ret)
 # gen ret2 = ret^2
 # gen lnret = ln(ret)
 #   
-#   * 30. generate interaction % education and remittances
-#   gen remedu = rem * secschool
-#   gen lnremedu = lnrem * secschool
-#   
-#   
+
 #   
 #### interaction % emigration and abstentionism ####
 d$abst = 1 - d$part6
 #   gen abst = 1 - part6
 #   replace abst = abst[_n-1] if abst==. & idedomun[_n-1]==idedomun
+
 #   gen socpolreject = abst*emig
 #   sum socpolreject
 #   
-#### Mexican gdp growth rate ####
-#   gen mexgdpgr = .
-#   replace mexgdpgr = 5.3 if year == 2000
-#   replace mexgdpgr = -0.61 if year == 2001
-#   replace mexgdpgr = 0.13 if year == 2002
-#   replace mexgdpgr = 1.42 if year == 2003
-#   replace mexgdpgr = 4.3 if year == 2004
-#   replace mexgdpgr = 3.03 if year == 2005
-#   replace mexgdpgr = 5 if year == 2006
-#   replace mexgdpgr = 3.15 if year == 2007
-#   replace mexgdpgr = 1.4 if year == 2008
-#   replace mexgdpgr = -4.7 if year == 2009
-#   replace mexgdpgr = 5.11 if year == 2010
-#   
-#### **U.S. gdp growth rate ####
-#   gen usgdpgr = .
-#   replace usgdpgr = 4.09 if year == 2000
-#   replace usgdpgr = 0.98 if year == 2001
-#   replace usgdpgr = 1.79 if year ==2002
-#   replace usgdpgr = 2.81 if year == 2003
-#   replace usgdpgr = 3.79 if year == 2004
-#   replace usgdpgr = 3.35 if year == 2005
-#   replace usgdpgr = 2.67 if year == 2006
-#   replace usgdpgr = 1.77 if year == 2007
-#   replace usgdpgr = 1.4 if year == 2008
-#   replace usgdpgr =  -4.7 if year == 2009
-#   replace usgdpgr = 2.53 if year == 2010
-#   
+
 #### detect the incumbent ####
 #   gen mincumbent = .
 #   replace mincumbent = 1 if PANtotal6 > PRItotal6 & PANtotal6 > PRDtotal6
@@ -601,8 +514,8 @@ d$abst = 1 - d$part6
 #     fedelect ruralcorp divrate lndivrate lnpop convrates, a(year)
 #   
 ## Alcohol intoxication
-
-save(d, file = 'Dframe.Rdata')
+newd <- d[ which(d$year==2000 | d$year == 2005 | d$year == 2010) , ]
+save(newd, file = 'newDframe.Rdata')
 
 ##### II Modelos ############
 # descriptive statistics (sin transformación)
@@ -611,18 +524,13 @@ ds <- subset(d, select = c("homicide_counts","horatesimbad", "emig","rem",
                            "wosec", "gini", "IDH_ingpc", "ied", "divrate",
                            "ruralcorp", "munENP", "youngmales", "sexratio", "gini",
                            "IDH_ingpc", "pob_ind", "pob_total", "ruralcorp", "divrate",
-                           "convrates", "border",  "pob_total_est"))
+                           "convrates", "border",  "pob_total_est","idedomun"))
 stargazer(ds, type = "text", title="Descriptive statistics", digits=2, out="table1.txt")
 
-# estadísticos descriptivos (con transformación)
-dt <- subset(d, select = c("loggdp", "logrem", "logret", "logemig", "logcirc"))
-             stargazer(dt, type = "text", title="Descriptive statistics", digits=2, out="table2.txt")
-
 save(ds, file = 'DS.Rdata')
-save(dt, file = 'DS.Rdata')
+# estadísticos descriptivos (con transformación)
+dt <- subset(d, select = c("loggdp", "logrem", "logret", "logemig", "logcirc","idedomun"))
+stargazer(dt, type = "text", title="Descriptive statistics", digits=2, out="table2.txt")
 
-#Model 1
-m1 <- glm.nb(d$horatesimbad ~ d$logemig + d$logrem + d$logret + d$logcirc + d$poverty + d$wosec 
-             + d$gini + d$loggdp + d$ied + d$divrate + d$ruralcorp + factor(d$year) data = d)
-summary(m1)
+save(dt, file = 'DT.Rdata')
 
